@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weighbridge Management System (WMS) - UI/UX Prototype</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- CSS Link -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- BACKGROUND DECORATIONS FOR GLASSMORPHISM -->
+  <div class="bg-gradient bg-grad-1"></div>
+  <div class="bg-gradient bg-grad-2"></div>
+  <div class="bg-gradient bg-grad-3"></div>
+
+  <!-- MAIN PROTOTYPE SHELL -->
+  <div class="app-shell">
+    
+    <!-- TOP CONTROL HEADER -->
+    <header class="shell-header">
+      <div class="logo-area">
+        <div class="logo-icon">⚓</div>
+        <div>
+          <h1>WMS PROTOTYPE</h1>
+          <span class="sub-label">Operator-Centric Design Hub</span>
+        </div>
+      </div>
+
+      <nav class="device-switcher">
+        <button class="switch-btn active" data-target="android-view" id="btn-android">
+          <span class="btn-icon">📱</span> Android (Neumorphic)
+        </button>
+        <button class="switch-btn" data-target="windows-view" id="btn-windows">
+          <span class="btn-icon">💻</span> Windows Desktop (Glassmorphic)
+        </button>
+        <button class="switch-btn" data-target="web-view" id="btn-web">
+          <span class="btn-icon">🌐</span> Web Admin (Glassmorphic)
+        </button>
+      </nav>
+
+      <div class="environment-status">
+        <div class="status-indicator">
+          <span class="indicator-dot online"></span>
+          <span class="indicator-text" id="active-db-label">DB: C:\WMS\WMS.db</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-toggle-account" title="Switch between Main and Temporary Cash accounts">
+          🔄 Switch DB
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN DISPLAY CANVAS -->
+    <main class="shell-body">
+
+      <!-- ============================================== -->
+      <!-- 1. ANDROID NEUMORPHIC VIEW                     -->
+      <!-- ============================================== -->
+      <section id="android-view" class="view-panel active">
+        <div class="android-emulator">
+          <div class="emulator-bezel">
+            <div class="emulator-camera"></div>
+            <div class="emulator-speaker"></div>
+            
+            <div class="emulator-screen">
+              <!-- Android Status Bar -->
+              <div class="android-status-bar">
+                <span class="time" id="android-time">09:41</span>
+                <div class="status-icons">
+                  <span>📶</span>
+                  <span>📶</span>
+                  <span>🔋 98%</span>
+                </div>
+              </div>
+
+              <!-- Android App Shell -->
+              <div class="android-app">
+                
+                <!-- Android Login Screen -->
+                <div id="android-screen-login" class="android-screen active">
+                  <div class="android-login-container">
+                    <div class="app-brand-mobile">
+                      <div class="brand-logo-mob">W</div>
+                      <h2>WMS Lite</h2>
+                      <p>Fast Weighbridge System</p>
+                    </div>
+
+                    <div class="neu-card form-container">
+                      <h3>Secure Access</h3>
+                      <div class="neu-input-group">
+                        <label for="mob-username">Username</label>
+                        <input type="text" id="mob-username" class="neu-input" placeholder="e.g. operator" value="admin">
+                      </div>
+                      <div class="neu-input-group">
+                        <label for="mob-password">Password</label>
+                        <input type="password" id="mob-password" class="neu-input" placeholder="••••••••" value="main">
+                      </div>
+
+                      <div class="account-selector-mob">
+                        <label class="neu-radio-container">
+                          <input type="radio" name="mob-account" value="main" checked id="mob-radio-main">
+                          <span class="checkmark"></span>
+                          Main Account
+                        </label>
+                        <label class="neu-radio-container">
+                          <input type="radio" name="mob-account" value="temp" id="mob-radio-temp">
+                          <span class="checkmark"></span>
+                          Temp Cash Account
+                        </label>
+                      </div>
+
+                      <button class="neu-btn neu-btn-primary w-100 mt-3" id="btn-mob-login">Sign In</button>
+                    </div>
+
+                    <div class="login-tips">
+                      <p>💡 Demo Logins:<br><b>admin / main</b> (Main DB)<br><b>cashier / temp</b> (Temp DB)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Android Core Layout (After Login) -->
+                <div id="android-screen-main" class="android-screen">
+                  
+                  <!-- Mobile App Header -->
+                  <header class="android-header">
+                    <div class="user-profile">
+                      <div class="avatar">OP</div>
+                      <div>
+                        <span class="welcome-text">Logged in as</span>
+                        <h4 id="mob-user-display">Operator (Main)</h4>
+                      </div>
+                    </div>
+                    <button class="neu-btn-icon" id="btn-mob-logout" title="Sign Out">🚪</button>
+                  </header>
+
+                  <!-- Mobile Tab Views Container -->
+                  <div class="android-content-area">
+                    
+                    <!-- Mobile Dashboard Tab -->
+                    <div id="mob-tab-dashboard" class="mob-tab-panel active">
+                      
+                      <!-- Daily Rate Widget -->
+                      <div class="neu-card rate-card">
+                        <div class="rate-info">
+                          <span>DAILY WEIGHING RATE</span>
+                          <h2 id="mob-rate-display">₹ 3.50 / KG</h2>
+                        </div>
+                        <button class="neu-btn-icon" id="btn-mob-edit-rate" title="Change daily rate">✏️</button>
+                      </div>
+
+                      <!-- Dashboard Mini Widgets -->
+                      <div class="mob-widget-grid">
+                        <div class="neu-card mini-widget">
+                          <span class="title">Weighments</span>
+                          <h3 id="mob-stat-count">0</h3>
+                        </div>
+                        <div class="neu-card mini-widget">
+                          <span class="title">Collections</span>
+                          <h3 id="mob-stat-cash">₹ 0.00</h3>
+                        </div>
+                        <div class="neu-card mini-widget">
+                          <span class="title">Pending Drafts</span>
+                          <h3 id="mob-stat-drafts" class="text-warning">0</h3>
+                        </div>
+                        <div class="neu-card mini-widget">
+                          <span class="title">DB Instance</span>
+                          <h3 id="mob-stat-db" class="text-info" style="font-size: 0.75rem;">Main</h3>
+                        </div>
+                      </div>
+
+                      <!-- Quick Action Buttons -->
+                      <div class="mob-quick-actions">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                          <button class="neu-btn text-primary" id="btn-action-arrival">
+                            <span class="icon">🚛</span> Arrival (Stage 1)
+                          </button>
+                          <button class="neu-btn text-success" id="btn-action-return">
+                            <span class="icon">🚚</span> Return (Stage 2)
+                          </button>
+                          <button class="neu-btn text-warning" id="btn-action-drafts">
+                            <span class="icon">📁</span> Pending Drafts
+                          </button>
+                          <button class="neu-btn text-info" id="btn-action-reports">
+                            <span class="icon">📊</span> Reports & Logs
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Mobile Stage 1: Vehicle Arrival -->
+                    <div id="mob-tab-arrival" class="mob-tab-panel">
+                      <div class="tab-header">
+                        <button class="neu-btn-icon back-btn" data-back="mob-tab-dashboard">←</button>
+                        <h2>Vehicle Arrival (Stage 1)</h2>
+                      </div>
+                      
+                      <div class="neu-card mt-3">
+                        <div class="neu-input-group">
+                          <label for="mob-arr-veh">Vehicle Reg Number *</label>
+                          <div class="input-with-action">
+                            <input type="text" id="mob-arr-veh" class="neu-input text-uppercase" placeholder="e.g. TN-37-BY-1234">
+                            <button class="neu-btn-icon action-btn-inline" id="btn-mob-ocr-rc" title="Scan Vehicle RC">📷</button>
+                          </div>
+                          <!-- Autocomplete Suggestions -->
+                          <div class="autocomplete-list" id="mob-arr-veh-suggestions"></div>
+                        </div>
+
+                        <div class="neu-input-group mt-3">
+                          <label for="mob-arr-driver">Driver Name</label>
+                          <div class="input-with-action">
+                            <input type="text" id="mob-arr-driver" class="neu-input" placeholder="e.g. Karthik Kumar">
+                            <button class="neu-btn-icon action-btn-inline" id="btn-mob-ocr-dl" title="Scan Driver DL">📷</button>
+                          </div>
+                          <div class="autocomplete-list" id="mob-arr-driver-suggestions"></div>
+                        </div>
+
+                        <div class="neu-input-group mt-3">
+                          <label for="mob-arr-tare">Tare Weight (KG) *</label>
+                          <div class="input-with-action">
+                            <input type="number" id="mob-arr-tare" class="neu-input" placeholder="e.g. 8500">
+                            <button class="neu-btn action-btn-inline scale-trigger" id="btn-mob-read-tare">Scale</button>
+                          </div>
+                        </div>
+
+                        <div class="form-actions mt-4">
+                          <button class="neu-btn neu-btn-primary w-100" id="btn-mob-save-draft">Save Draft (DRAFT)</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Mobile Stage 2: Vehicle Return -->
+                    <div id="mob-tab-return" class="mob-tab-panel">
+                      <div class="tab-header">
+                        <button class="neu-btn-icon back-btn" data-back="mob-tab-dashboard">←</button>
+                        <h2>Vehicle Return (Stage 2)</h2>
+                      </div>
+
+                      <div class="draft-selector-section mt-3">
+                        <label for="mob-ret-draft-select">Select Active Draft</label>
+                        <select id="mob-ret-draft-select" class="neu-input">
+                          <option value="">-- Choose active vehicle --</option>
+                        </select>
+                      </div>
+
+                      <div id="mob-ret-form-fields" class="mt-3 disabled-opacity">
+                        <div class="neu-card">
+                          <div class="detail-row">
+                            <span>Vehicle:</span>
+                            <strong id="lbl-mob-ret-veh">-</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Driver:</span>
+                            <strong id="lbl-mob-ret-driver">-</strong>
+                          </div>
+                          <div class="detail-row">
+                            <span>Tare Weight:</span>
+                            <strong id="lbl-mob-ret-tare">-</strong>
+                          </div>
+                        </div>
+
+                        <div class="neu-card mt-3">
+                          <h3>Additional Information</h3>
+                          
+                          <div class="neu-input-group mt-2">
+                            <label for="mob-ret-transport">Transport Company</label>
+                            <input type="text" id="mob-ret-transport" class="neu-input" placeholder="e.g. VRL Logistics">
+                            <div class="autocomplete-list" id="mob-ret-transport-suggestions"></div>
+                          </div>
+
+                          <div class="neu-input-group mt-3">
+                            <label for="mob-ret-material">Material Type *</label>
+                            <input type="text" id="mob-ret-material" class="neu-input" placeholder="e.g. Iron Ore">
+                            <div class="autocomplete-list" id="mob-ret-material-suggestions"></div>
+                          </div>
+
+                          <!-- Document Scanners removed (RC & DL captured at arrival) -->
+                        </div>
+
+                        <div class="neu-card mt-3 highlight-card">
+                          <h3>Gross & Net Weight</h3>
+                          
+                          <div class="neu-input-group mt-2">
+                            <label for="mob-ret-gross">Gross Weight (KG) *</label>
+                            <div class="input-with-action">
+                              <input type="number" id="mob-ret-gross" class="neu-input" placeholder="e.g. 24500">
+                              <button class="neu-btn action-btn-inline scale-trigger" id="btn-mob-read-gross">Scale</button>
+                            </div>
+                          </div>
+
+                          <div class="calculations-panel mt-3">
+                            <div class="calc-row">
+                              <span>Net Weight:</span>
+                              <span class="calc-value"><strong id="mob-lbl-net">-</strong> KG</span>
+                            </div>
+                            <div class="calc-row">
+                              <span>Rate Per KG:</span>
+                              <span class="calc-value" id="mob-lbl-rate">₹ 3.50</span>
+                            </div>
+                            <hr class="neu-divider">
+                            <div class="calc-row total-row">
+                              <span>Total Amount:</span>
+                              <span class="calc-value text-success" id="mob-lbl-amount">₹ 0.00</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="neu-card mt-3">
+                          <h3>Payment & Completion</h3>
+                          
+                          <div class="payment-method-selector mt-2">
+                            <button class="neu-btn pay-opt active" data-method="Cash">💵 Cash</button>
+                            <button class="neu-btn pay-opt" data-method="UPI">📱 UPI</button>
+                            <button class="neu-btn pay-opt" data-method="Card">💳 Card</button>
+                          </div>
+
+                          <button class="neu-btn neu-btn-success w-100 mt-4" id="btn-mob-complete-transaction">
+                            🏁 Complete Transaction
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Mobile Drafts View -->
+                    <div id="mob-tab-drafts" class="mob-tab-panel">
+                      <div class="tab-header">
+                        <button class="neu-btn-icon back-btn" data-back="mob-tab-dashboard">←</button>
+                        <h2>Pending Drafts (LOADING)</h2>
+                      </div>
+                      
+                      <div class="drafts-list-container mt-3" id="mob-drafts-list-container">
+                        <!-- Simulated Draft Cards -->
+                      </div>
+                    </div>
+
+                    <!-- Mobile Reports & Logs -->
+                    <div id="mob-tab-reports" class="mob-tab-panel">
+                      <div class="tab-header">
+                        <button class="neu-btn-icon back-btn" data-back="mob-tab-dashboard">←</button>
+                        <h2>Reports & Logs</h2>
+                      </div>
+
+                      <div class="neu-card mt-3">
+                        <div class="tab-switcher-reports">
+                          <button class="neu-btn active" id="btn-mob-rep-ops">Weighments</button>
+                          <button class="neu-btn" id="btn-mob-rep-fin">Collections</button>
+                          <button class="neu-btn" id="btn-mob-rep-audit">Audit Logs</button>
+                        </div>
+
+                        <div class="report-table-wrapper mt-3">
+                          <table class="mob-report-table" id="mob-table-data">
+                            <thead>
+                              <!-- Headers added dynamically -->
+                            </thead>
+                            <tbody>
+                              <!-- Data added dynamically -->
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- Mobile Navigation Bar -->
+                  <nav class="android-navigation">
+                    <button class="nav-item active" data-tab="mob-tab-dashboard">
+                      <span class="nav-icon">📊</span>
+                      <span class="nav-text">Home</span>
+                    </button>
+                    <button class="nav-item" data-tab="mob-tab-arrival">
+                      <span class="nav-icon">🚛</span>
+                      <span class="nav-text">Arrival</span>
+                    </button>
+                    <button class="nav-item" data-tab="mob-tab-return">
+                      <span class="nav-icon">🚚</span>
+                      <span class="nav-text">Return</span>
+                    </button>
+                    <button class="nav-item" data-tab="mob-tab-reports">
+                      <span class="nav-icon">📈</span>
+                      <span class="nav-text">Reports</span>
+                    </button>
+                  </nav>
+
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Home Button/Gesture Bar -->
+            <div class="emulator-home-bar"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 2. WINDOWS DESKTOP GLASSMORPHIC VIEW            -->
+      <!-- ============================================== -->
+      <section id="windows-view" class="view-panel">
+        <div class="windows-container">
+          
+          <!-- WINDOWS LOGIN SCREEN -->
+          <div id="win-login-layout" class="win-login-layout glass-panel">
+            <div class="win-login-card">
+              <span class="win-logo-large">⚓</span>
+              <h2>WMS Desktop Console</h2>
+              <p class="text-muted">Enter credentials to mount database instances</p>
+              
+              <div class="win-input-group mt-3">
+                <label for="win-username">Username</label>
+                <input type="text" id="win-username" class="win-input" placeholder="admin / cashier" value="admin">
+              </div>
+              <div class="win-input-group mt-2">
+                <label for="win-password">Password</label>
+                <input type="password" id="win-password" class="win-input" placeholder="••••••••" value="main">
+              </div>
+              
+              <div class="account-selector-win mt-3">
+                <label class="pay-radio">
+                  <input type="radio" name="win-login-account" value="main" checked id="win-radio-main">
+                  <span>Main DB</span>
+                </label>
+                <label class="pay-radio">
+                  <input type="radio" name="win-login-account" value="temp" id="win-radio-temp">
+                  <span>Temp Cash DB</span>
+                </label>
+              </div>
+              
+              <button class="win-btn win-btn-accent w-100 mt-4" id="btn-win-login">Access System</button>
+              
+              <div class="login-tips" style="color:var(--glass-text-muted); margin-top:20px; font-size: 0.72rem;">
+                <p>💡 Demo Logins:<br><b>admin / main</b> (Main DB)<br><b>cashier / temp</b> (Temp DB)</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- WINDOWS MAIN APPLICATION LAYOUT -->
+          <div id="win-main-layout" class="win-main-layout hidden">
+          
+          <!-- Windows App Header -->
+          <div class="win-app-header glass-panel">
+            <div class="app-title-area">
+              <span class="win-logo">📦</span>
+              <div>
+                <h2>Weighbridge Management System (WMS Desktop)</h2>
+                <p class="win-db-path" id="win-db-path-display">Connected: C:\WMS\WMS.db</p>
+              </div>
+            </div>
+
+            <div class="win-status-widgets">
+              <div class="stat-indicator">
+                <span class="stat-label">DAILY RATE:</span>
+                <span class="stat-value text-accent" id="win-rate-display">₹ 3.50 / KG</span>
+              </div>
+              <div class="stat-indicator">
+                <span class="stat-label">PENDING DRAFTS:</span>
+                <span class="stat-value text-warning" id="win-stat-drafts">0</span>
+              </div>
+              <div class="stat-indicator">
+                <span class="stat-label">SESSION USER:</span>
+                <span class="stat-value" id="win-user-display">Administrator</span>
+              </div>
+              <button class="win-action-btn border-glow ml-2" id="btn-win-logout">Log Out</button>
+            </div>
+          </div>
+
+          <!-- Windows App Body Workspace -->
+          <div class="win-workspace">
+            
+            <!-- Sidebar Navigation -->
+            <aside class="win-sidebar glass-panel">
+              <nav class="win-nav">
+                <button class="win-nav-item active" data-win-pane="win-pane-dashboard">
+                  <span class="icon">🖥️</span> Dashboard Overview
+                </button>
+                <button class="win-nav-item" data-win-pane="win-pane-weighment">
+                  <span class="icon">⚖️</span> Fast Weighment Flow
+                </button>
+                <button class="win-nav-item" data-win-pane="win-pane-search">
+                  <span class="icon">🔍</span> Search & Retrieve
+                </button>
+                <button class="win-nav-item" data-win-pane="win-pane-reports">
+                  <span class="icon">📊</span> Reporting Engine
+                </button>
+                <button class="win-nav-item" data-win-pane="win-pane-audit">
+                  <span class="icon">📜</span> System Audit Logs
+                </button>
+              </nav>
+
+              <div class="win-sidebar-footer">
+                <p>Ver 1.0.0 (Phase 1 Approved)</p>
+                <p class="text-muted">Glassmorphism Mode</p>
+              </div>
+            </aside>
+
+            <!-- Main Panel Content Workspace -->
+            <div class="win-content-canvas">
+              
+              <!-- PANE: Dashboard Overview -->
+              <div id="win-pane-dashboard" class="win-pane active">
+                <div class="win-grid-2x2">
+                  
+                  <!-- Widget 1: Rate configuration -->
+                  <div class="glass-panel widget-box">
+                    <div class="widget-header">
+                      <h3>Daily Rate Configuration</h3>
+                      <span class="icon-tag">💰</span>
+                    </div>
+                    <div class="widget-body text-center">
+                      <p class="desc">Enter the rate per KG applied to billing during transactions.</p>
+                      <h1 class="rate-large" id="win-rate-large">₹ 3.50</h1>
+                      <div class="rate-edit-inline mt-3">
+                        <div class="input-with-prefix">
+                          <span class="prefix">₹</span>
+                          <input type="number" id="win-rate-input" step="0.01" min="0.1" value="3.50" class="win-input">
+                        </div>
+                        <button class="win-btn win-btn-accent" id="btn-win-save-rate">Save Rate</button>
+                      </div>
+                      <p class="info-text text-muted mt-2">ℹ️ Updates take effect immediately for new transactions.</p>
+                    </div>
+                  </div>
+
+                  <!-- Widget 2: Operational Statistics -->
+                  <div class="glass-panel widget-box">
+                    <div class="widget-header">
+                      <h3>Today's Analytics</h3>
+                      <span class="icon-tag">📈</span>
+                    </div>
+                    <div class="widget-body">
+                      <div class="stats-row">
+                        <div class="stat-card">
+                          <span class="label">Completed Weighments</span>
+                          <h2 id="win-stat-total-count">0</h2>
+                        </div>
+                        <div class="stat-card">
+                          <span class="label">Drafts (In Loading)</span>
+                          <h2 id="win-stat-draft-count" class="text-warning">0</h2>
+                        </div>
+                      </div>
+                      <div class="stats-row mt-3">
+                        <div class="stat-card">
+                          <span class="label">Total Collections</span>
+                          <h2 id="win-stat-total-collections" class="text-success">₹ 0.00</h2>
+                        </div>
+                        <div class="stat-card">
+                          <span class="label">Active Database</span>
+                          <h2 style="font-size: 1.1rem; color: var(--color-info);" id="win-stat-active-db">WMS.db</h2>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Widget 3: Live Scale Values Simulation -->
+                  <div class="glass-panel widget-box col-span-2">
+                    <div class="widget-header">
+                      <h3>Weighbridge Integration Indicator (Mock Feed)</h3>
+                      <div class="win-badge green-pulse">Scale Online</div>
+                    </div>
+                    <div class="widget-body scale-sim-body">
+                      <div class="scale-reading">
+                        <span class="title">CURRENT SCALE WEIGHT</span>
+                        <div class="lcd-display">
+                          <span class="lcd-value" id="win-scale-lcd">00000</span>
+                          <span class="lcd-unit">KG</span>
+                        </div>
+                      </div>
+                      
+                      <div class="scale-controls">
+                        <label for="win-scale-sim-range">Simulate Scale Weight (For testing without actual hardware):</label>
+                        <input type="range" id="win-scale-sim-range" min="0" max="40000" step="50" value="0" class="win-range">
+                        <div class="preset-buttons">
+                          <button class="win-btn-sm" onclick="setSimScale(0)">Zero</button>
+                          <button class="win-btn-sm" onclick="setSimScale(8450)">8,450 kg (Empty Truck)</button>
+                          <button class="win-btn-sm" onclick="setSimScale(24800)">24,800 kg (Loaded Coal)</button>
+                          <button class="win-btn-sm" onclick="setSimScale(31200)">31,200 kg (Iron Sheet Truck)</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- PANE: Fast Weighment Flow -->
+              <div id="win-pane-weighment" class="win-pane">
+                <div class="win-weighment-grid">
+                  
+                  <!-- COLUMN 1: Stage 1 - Vehicle Arrival -->
+                  <div class="glass-panel flow-card">
+                    <div class="flow-header stage-1">
+                      <h3>Stage 1 – Vehicle Arrival (Draft Creation)</h3>
+                      <span class="stage-num">01</span>
+                    </div>
+
+                    <div class="flow-body">
+                      <div class="win-input-group">
+                        <label for="win-arr-veh">Vehicle Registration Number *</label>
+                        <div class="input-actions-wrapper">
+                          <input type="text" id="win-arr-veh" class="win-input text-uppercase font-mono" placeholder="TN-37-BY-1234">
+                          <button class="win-btn btn-icon-only border-glow" id="btn-win-ocr-rc" title="Scan Vehicle RC">📷</button>
+                        </div>
+                        <div class="autocomplete-list" id="win-arr-veh-suggestions"></div>
+                      </div>
+
+                      <div class="win-input-group mt-3">
+                        <label for="win-arr-driver">Driver Name</label>
+                        <div class="input-actions-wrapper">
+                          <input type="text" id="win-arr-driver" class="win-input" placeholder="Enter driver name">
+                          <button class="win-btn btn-icon-only border-glow" id="btn-win-ocr-dl" title="Scan Driver DL">📷</button>
+                        </div>
+                        <div class="autocomplete-list" id="win-arr-driver-suggestions"></div>
+                      </div>
+
+                      <div class="win-input-group mt-3">
+                        <label for="win-arr-tare">Tare Weight (KG) *</label>
+                        <div class="input-actions-wrapper">
+                          <input type="number" id="win-arr-tare" class="win-input font-mono" placeholder="0">
+                          <button class="win-btn win-btn-accent scale-trigger" id="btn-win-read-tare">Read Scale</button>
+                        </div>
+                      </div>
+
+                      <button class="win-btn win-btn-primary w-100 mt-4" id="btn-win-save-draft">
+                        💾 Save Draft Transaction
+                      </button>
+                      <p class="text-muted text-center mt-2 small">Saves record as DRAFT (Est: <15 seconds)</p>
+                    </div>
+                  </div>
+
+                  <!-- COLUMN 2: Stage 2 - Vehicle Return -->
+                  <div class="glass-panel flow-card">
+                    <div class="flow-header stage-2">
+                      <h3>Stage 2 – Vehicle Return (Transaction Completion)</h3>
+                      <span class="stage-num">02</span>
+                    </div>
+
+                    <div class="flow-body">
+                      <div class="win-input-group">
+                        <label for="win-ret-draft-select">Select Active Draft / Loading Vehicle</label>
+                        <select id="win-ret-draft-select" class="win-input">
+                          <option value="">-- Choose active draft --</option>
+                        </select>
+                      </div>
+
+                      <div id="win-ret-fields-container" class="disabled-opacity mt-3">
+                        <div class="draft-preview-pill">
+                          <div class="pill-item"><span>Vehicle:</span> <strong id="lbl-win-ret-veh">-</strong></div>
+                          <div class="pill-item"><span>Driver:</span> <strong id="lbl-win-ret-driver">-</strong></div>
+                          <div class="pill-item"><span>Tare:</span> <strong id="lbl-win-ret-tare">-</strong> KG</div>
+                        </div>
+
+                        <div class="win-input-group mt-3">
+                          <label for="win-ret-transport">Transport Company</label>
+                          <input type="text" id="win-ret-transport" class="win-input" placeholder="e.g. VRL Logistics">
+                          <div class="autocomplete-list" id="win-ret-transport-suggestions"></div>
+                        </div>
+
+                        <div class="win-input-group mt-3">
+                          <label for="win-ret-material">Material Type *</label>
+                          <input type="text" id="win-ret-material" class="win-input" placeholder="e.g. Coal, Iron, Cement">
+                          <div class="autocomplete-list" id="win-ret-material-suggestions"></div>
+                        </div>
+
+                        <!-- Document Scanners removed (RC & DL captured at arrival) -->
+
+                        <div class="win-input-group mt-3">
+                          <label for="win-ret-gross">Gross Weight (KG) *</label>
+                          <div class="input-actions-wrapper">
+                            <input type="number" id="win-ret-gross" class="win-input font-mono" placeholder="0">
+                            <button class="win-btn win-btn-accent scale-trigger" id="btn-win-read-gross">Read Scale</button>
+                          </div>
+                        </div>
+
+                        <!-- Computations -->
+                        <div class="win-calculations-box mt-3">
+                          <div class="calc-grid">
+                            <div class="grid-item">
+                              <span>Net Weight</span>
+                              <h3 id="win-lbl-net">-</h3>
+                            </div>
+                            <div class="grid-item">
+                              <span>Rate Per KG</span>
+                              <h3 id="win-lbl-rate">₹ 3.50</h3>
+                            </div>
+                            <div class="grid-item highlight">
+                              <span>Total Billing Amount</span>
+                              <h2 id="win-lbl-amount">₹ 0.00</h2>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Payment Methods -->
+                        <div class="win-input-group mt-3">
+                          <label>Payment Method</label>
+                          <div class="win-payment-methods">
+                            <label class="pay-radio">
+                              <input type="radio" name="win-pay-method" value="Cash" checked>
+                              <span>💵 Cash</span>
+                            </label>
+                            <label class="pay-radio">
+                              <input type="radio" name="win-pay-method" value="UPI">
+                              <span>📱 UPI</span>
+                            </label>
+                            <label class="pay-radio">
+                              <input type="radio" name="win-pay-method" value="Card">
+                              <span>💳 Card</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <button class="win-btn win-btn-success w-100 mt-4" id="btn-win-complete">
+                          🏁 Complete & Generate Invoice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- PANE: Search & Retrieve -->
+              <div id="win-pane-search" class="win-pane">
+                <div class="glass-panel search-panel">
+                  <h3>Transaction Search Engine</h3>
+                  
+                  <div class="search-form mt-3">
+                    <input type="text" id="win-search-query" class="win-input" placeholder="Search by Vehicle, Driver, Receipt, Transaction #, or Material...">
+                    <select id="win-search-filter-material" class="win-input">
+                      <option value="">-- All Materials --</option>
+                    </select>
+                    <input type="date" id="win-search-date-start" class="win-input" title="Start Date">
+                    <input type="date" id="win-search-date-end" class="win-input" title="End Date">
+                    <button class="win-btn win-btn-accent" id="btn-win-search">Search</button>
+                  </div>
+
+                  <div class="table-container-win mt-4">
+                    <table class="win-data-table">
+                      <thead>
+                        <tr>
+                          <th>Tx ID</th>
+                          <th>Receipt ID</th>
+                          <th>Vehicle #</th>
+                          <th>Driver Name</th>
+                          <th>Material</th>
+                          <th>Net Wt (KG)</th>
+                          <th>Rate/KG</th>
+                          <th>Billing Amount</th>
+                          <th>Payment</th>
+                          <th>Timestamp</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="win-search-results-body">
+                        <!-- Filled by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PANE: Reporting Engine -->
+              <div id="win-pane-reports" class="win-pane">
+                <div class="glass-panel reports-container">
+                  <div class="reports-header-row">
+                    <h3>Analytical Reports Dashboard</h3>
+                    <div class="export-actions">
+                      <button class="win-btn win-btn-sm" id="btn-win-export-csv">📂 Export to CSV</button>
+                      <button class="win-btn win-btn-sm btn-accent" id="btn-win-export-pdf">📄 Generate PDF Summary</button>
+                    </div>
+                  </div>
+
+                  <div class="reports-tabs mt-3">
+                    <button class="win-tab-btn active" id="btn-win-rep-ops">Weighment Log</button>
+                    <button class="win-tab-btn" id="btn-win-rep-fin">Financial Analysis</button>
+                    <button class="win-tab-btn" id="btn-win-rep-drafts">Active Drafts</button>
+                  </div>
+
+                  <div class="table-container-win mt-3">
+                    <table class="win-data-table" id="win-reports-table">
+                      <thead>
+                        <!-- Headings added dynamically -->
+                      </thead>
+                      <tbody id="win-reports-table-body">
+                        <!-- Data rows added dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- PANE: System Audit Logs -->
+              <div id="win-pane-audit" class="win-pane">
+                <div class="glass-panel audit-container">
+                  <div class="audit-header">
+                    <h3>Secure System Audit Logs</h3>
+                    <div class="win-badge alert-danger">Immutable Log Feed</div>
+                  </div>
+                  <p class="desc mt-1 text-muted">All operator logins, daily rate changes, weighing completions, edits, and receipts prints are tracked with timestamps and database paths.</p>
+
+                  <div class="table-container-win mt-3">
+                    <table class="win-data-table">
+                      <thead>
+                        <tr>
+                          <th>Timestamp</th>
+                          <th>User</th>
+                          <th>Action / Event</th>
+                          <th>Database Instance</th>
+                          <th>IP/Terminal</th>
+                        </tr>
+                      </thead>
+                      <tbody id="win-audit-table-body">
+                        <!-- Populated by JS -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          </div> <!-- Close win-main-layout -->
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 3. WEB ADMIN GLASSMORPHIC VIEW                 -->
+      <!-- ============================================== -->
+      <section id="web-view" class="view-panel">
+        <div class="web-container">
+          
+          <!-- Web Navigation Bar -->
+          <nav class="web-nav-bar glass-panel">
+            <div class="logo">
+              <span>🌐</span> WMS Web-Console
+            </div>
+            <div class="web-links">
+              <a href="#web-dash" class="active">Management Dashboard</a>
+              <a href="#web-users">User Administration</a>
+              <a href="#web-audit">Cross-Account Logs</a>
+            </div>
+            <div class="web-profile">
+              <span class="web-db-path text-info font-mono" id="web-db-path-display" style="font-size: 0.72rem;">DB: C:\WMS\WMS.db</span>
+              <span class="user-role">System Admin</span>
+              <button class="btn btn-secondary btn-sm" onclick="alert('Switch accounts inside emulator or desktop views.')">Switch Environment</button>
+            </div>
+          </nav>
+
+          <div class="web-content mt-4">
+            
+            <!-- PANE 1: Dashboard Analytics -->
+            <div id="web-pane-dash" class="web-pane-content">
+            
+            <!-- Dashboard overview cards -->
+            <div class="web-stats-row">
+              <div class="glass-panel web-card">
+                <h3>Main Account DB Collections</h3>
+                <h1 id="web-stat-main-collections">₹ 0.00</h1>
+                <p>Path: <code>C:\WMS\WMS.db</code></p>
+              </div>
+              <div class="glass-panel web-card">
+                <h3>Temporary Cash DB Collections</h3>
+                <h1 id="web-stat-temp-collections">₹ 0.00</h1>
+                <p>Path: <code>C:\Temp\TempWMS.db</code></p>
+              </div>
+              <div class="glass-panel web-card">
+                <h3>Total Weighment Count</h3>
+                <h1 id="web-stat-total-weighments">0</h1>
+                <p>Across both accounting servers</p>
+              </div>
+            </div>
+
+            <!-- Double-sided Isolation Demo -->
+            <div class="web-isolation-grid mt-4">
+              <div class="glass-panel">
+                <div class="panel-header">
+                  <h3>Main Account Transactions</h3>
+                  <span class="win-badge bg-primary">Official Ledger</span>
+                </div>
+                <div class="table-container-win mt-2">
+                  <table class="win-data-table font-sm">
+                    <thead>
+                      <tr>
+                        <th>Receipt #</th>
+                        <th>Vehicle</th>
+                        <th>Net Wt</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody id="web-table-main-db">
+                      <!-- Filled by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="glass-panel">
+                <div class="panel-header">
+                  <h3>Temporary Account Transactions</h3>
+                  <span class="win-badge bg-warning text-dark">Cash Ledger (Isolated)</span>
+                </div>
+                <div class="table-container-win mt-2">
+                  <table class="win-data-table font-sm">
+                    <thead>
+                      <tr>
+                        <th>Receipt #</th>
+                        <th>Vehicle</th>
+                        <th>Net Wt</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody id="web-table-temp-db">
+                      <!-- Filled by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Management Analytics Chart Demonstration -->
+            <div class="glass-panel mt-4">
+              <h3>Material-Wise Total Revenue Analysis</h3>
+              <p class="text-muted">Interactive visual analysis showing material-wise volume breakdown.</p>
+              <div class="mock-chart-container mt-3">
+                <!-- SVG Chart Mockup -->
+                <svg viewBox="0 0 800 200" class="web-svg-chart">
+                  <g class="chart-grid">
+                    <line x1="50" y1="150" x2="750" y2="150" stroke="#444" stroke-width="1"/>
+                    <line x1="50" y1="100" x2="750" y2="100" stroke="#444" stroke-width="1" stroke-dasharray="4"/>
+                    <line x1="50" y1="50" x2="750" y2="50" stroke="#444" stroke-width="1" stroke-dasharray="4"/>
+                  </g>
+                  <g class="chart-bars" id="web-chart-bars">
+                    <!-- Bars drawn dynamically by app.js -->
+                  </g>
+                  <g class="chart-axis-labels">
+                    <text x="45" y="155" fill="#aaa" font-size="10" text-anchor="end">0</text>
+                    <text x="45" y="105" fill="#aaa" font-size="10" text-anchor="end">₹10K</text>
+                    <text x="45" y="55" fill="#aaa" font-size="10" text-anchor="end">₹20K</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+            </div> <!-- Close PANE 1 web-pane-dash -->
+
+            <!-- PANE 2: User Administration -->
+            <div id="web-pane-users" class="web-pane-content hidden">
+              <div class="glass-panel">
+                <div class="panel-header">
+                  <h3>User Accounts & Security Settings</h3>
+                  <button class="win-btn win-btn-accent win-btn-sm" id="btn-add-user-trigger">+ Add New User</button>
+                </div>
+                
+                <div class="table-container-win mt-3">
+                  <table class="win-data-table">
+                    <thead>
+                      <tr>
+                        <th>Username</th>
+                        <th>Role / Designation</th>
+                        <th>Assigned DB Environment</th>
+                        <th>Security Level</th>
+                        <th>Session Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Dynamic rows loaded from DB states -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANE 3: Cross-Account Audit Logs -->
+            <div id="web-pane-audit" class="web-pane-content hidden">
+              <div class="glass-panel">
+                <div class="panel-header">
+                  <h3>Combined System Logs (Main & Temporary Databases)</h3>
+                  <button class="win-btn win-btn-sm" id="btn-web-export-audit">📂 Export Logs</button>
+                </div>
+                <p class="desc text-muted mt-1 font-sm">Admin View: Merged real-time security events across all local accounting systems.</p>
+                
+                <div class="table-container-win mt-3">
+                  <table class="win-data-table">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Database Path</th>
+                        <th>Event Description</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="web-table-combined-audit">
+                      <!-- Filled by JS from both DBs -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+
+    </main>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CAMERA VIEWPORT SIMULATOR FOR OCR       -->
+  <!-- ============================================== -->
+  <div id="ocr-camera-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow">
+      <div class="modal-header">
+        <h3 id="ocr-modal-title">Live Document OCR Capture Scanner</h3>
+        <button class="close-btn" id="btn-close-ocr">✕</button>
+      </div>
+      
+      <div class="camera-body">
+        <div class="viewfinder-container">
+          <!-- Scan laser line -->
+          <div class="scan-laser-line"></div>
+          
+          <!-- Sample Document inside Viewfinder -->
+          <div class="mock-doc-feed" id="mock-doc-feed-container">
+            <!-- Dynamic document content goes here -->
+          </div>
+          
+          <div class="camera-lens-grid"></div>
+        </div>
+
+        <div class="scan-tips mt-2 text-center text-muted font-sm">
+          <span>Align document within the guides. Processing is completely automatic.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="progress-bar-container hidden" id="ocr-progress-container">
+          <div class="progress-bar-fill" id="ocr-progress-fill"></div>
+          <span class="progress-label" id="ocr-progress-label">Analyzing image...</span>
+        </div>
+        
+        <button class="win-btn win-btn-accent w-100" id="btn-trigger-capture">
+          📸 Capture & Extract Text (OCR)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: THERMAL PRINTING PREVIEW                -->
+  <!-- ============================================== -->
+  <div id="thermal-print-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow print-modal-content">
+      <div class="modal-header">
+        <h3>Thermal Printer Preview (Receipt)</h3>
+        <button class="close-btn" id="btn-close-thermal">✕</button>
+      </div>
+
+      <div class="print-body">
+        <div class="receipt-paper font-mono" id="receipt-paper-content">
+          <!-- Thermal Invoice details added dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer print-actions-footer">
+        <button class="win-btn" id="btn-reprint-receipt">🖨️ Send to Printer (Mock)</button>
+        <button class="win-btn win-btn-accent" id="btn-close-receipt-done">Done (New Flow)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CHANGE DAILY RATE                       -->
+  <!-- ============================================== -->
+  <div id="rate-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow rate-modal-content">
+      <div class="modal-header">
+        <h3>Change Daily Billing Rate</h3>
+        <button class="close-btn" id="btn-close-rate-modal">✕</button>
+      </div>
+      <div class="modal-body p-3">
+        <label for="mob-rate-input-field">Daily Rate Per KG (₹)</label>
+        <input type="number" id="mob-rate-input-field" class="neu-input mt-1" step="0.01" value="3.50">
+      </div>
+      <div class="modal-footer">
+        <button class="neu-btn neu-btn-primary w-100" id="btn-mob-save-rate-modal">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ADD NEW USER                             -->
+  <!-- ============================================== -->
+  <div id="add-user-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow">
+      <div class="modal-header">
+        <h3>Create New User Profile</h3>
+        <button class="close-btn" id="btn-close-user-modal">✕</button>
+      </div>
+      
+      <form id="add-user-form" onsubmit="event.preventDefault();">
+        <div class="win-input-group">
+          <label for="new-username">Username *</label>
+          <input type="text" id="new-username" class="win-input" placeholder="e.g. operator2" required>
+        </div>
+
+        <div class="win-input-group mt-3">
+          <label for="new-password">Password *</label>
+          <input type="password" id="new-password" class="win-input" placeholder="••••••••" required>
+        </div>
+
+        <div class="win-input-group mt-3">
+          <label for="new-role">Role / Designation *</label>
+          <input type="text" id="new-role" class="win-input" placeholder="e.g. Weighbridge Operator" required>
+        </div>
+
+        <div class="win-input-group mt-3">
+          <label for="new-db-env">Assigned Database *</label>
+          <select id="new-db-env" class="win-input" required>
+            <option value="MainDB">Main DB (C:\WMS\WMS.db)</option>
+            <option value="TempDB">Temp DB (C:\Temp\TempWMS.db)</option>
+          </select>
+        </div>
+
+        <div class="win-input-group mt-3">
+          <label for="new-sec-level">Security Access Level *</label>
+          <select id="new-sec-level" class="win-input" required>
+            <option value="Level 1 (Weighment & Collections)">Level 1 (Weighment & Collections)</option>
+            <option value="Level 2 (Read/Write/No Rate Edit)">Level 2 (Read/Write/No Rate Edit)</option>
+            <option value="Level 3 (Read/Write/Rate Edit)">Level 3 (Read/Write/Rate Edit)</option>
+          </select>
+        </div>
+
+        <div class="modal-footer mt-4">
+          <button type="submit" class="win-btn win-btn-accent w-100" id="btn-submit-new-user">
+            👤 Register User Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JS Link -->
+  <script src="app.js"></script>
+</body>
+</html>
