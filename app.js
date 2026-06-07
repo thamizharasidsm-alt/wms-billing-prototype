@@ -153,32 +153,65 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initDatabase() {
-  // Load from local storage or reset to default
-  if (!localStorage.getItem("wms_main_db")) {
-    localStorage.setItem("wms_main_db", JSON.stringify(DEFAULT_MAIN_DB));
-  }
-  if (!localStorage.getItem("wms_temp_db")) {
-    localStorage.setItem("wms_temp_db", JSON.stringify(DEFAULT_TEMP_DB));
-  }
+  const resetToDefaults = () => {
+    try {
+      localStorage.setItem("wms_main_db", JSON.stringify(DEFAULT_MAIN_DB));
+      localStorage.setItem("wms_temp_db", JSON.stringify(DEFAULT_TEMP_DB));
+    } catch (e) {
+      console.warn("localStorage not writable, falling back to memory defaults", e);
+    }
+  };
 
-  // Ensure users list exists in both databases for backward compatibility
-  let mainDbState = JSON.parse(localStorage.getItem("wms_main_db"));
-  if (mainDbState && !mainDbState.users) {
-    mainDbState.users = [
-      { username: "admin", role: "Senior Operator / Admin", dbPath: "C:\\WMS\\WMS.db", securityLevel: "Level 3 (Read/Write/Rate Edit)", password: "main" }
-    ];
-    localStorage.setItem("wms_main_db", JSON.stringify(mainDbState));
-  }
-  let tempDbState = JSON.parse(localStorage.getItem("wms_temp_db"));
-  if (tempDbState && !tempDbState.users) {
-    tempDbState.users = [
-      { username: "cashier", role: "Cash Weighment Operator", dbPath: "C:\\Temp\\TempWMS.db", securityLevel: "Level 1 (Weighment & Collections)", password: "temp" }
-    ];
-    localStorage.setItem("wms_temp_db", JSON.stringify(tempDbState));
+  try {
+    let mainRaw = null;
+    let tempRaw = null;
+    
+    try {
+      mainRaw = localStorage.getItem("wms_main_db");
+      tempRaw = localStorage.getItem("wms_temp_db");
+    } catch (e) {
+      console.warn("localStorage read blocked", e);
+    }
+
+    if (!mainRaw || !tempRaw) {
+      resetToDefaults();
+    } else {
+      let mainValid = false;
+      let tempValid = false;
+      try {
+        const parsedMain = JSON.parse(mainRaw);
+        if (parsedMain && Array.isArray(parsedMain.users) && parsedMain.users.length > 0 && parsedMain.users.some(u => u.username === "admin")) {
+          mainValid = true;
+        }
+      } catch (e) {}
+
+      try {
+        const parsedTemp = JSON.parse(tempRaw);
+        if (parsedTemp && Array.isArray(parsedTemp.users) && parsedTemp.users.length > 0 && parsedTemp.users.some(u => u.username === "cashier")) {
+          tempValid = true;
+        }
+      } catch (e) {}
+
+      if (!mainValid || !tempValid) {
+        console.warn("Detected missing or empty users in localStorage, resetting DB to defaults");
+        resetToDefaults();
+      }
+    }
+  } catch (err) {
+    console.error("General error in initDatabase checking", err);
+    resetToDefaults();
   }
 
   // Load current active state
-  activeDBName = localStorage.getItem("wms_active_db_name") || "MainDB";
+  try {
+    activeDBName = localStorage.getItem("wms_active_db_name") || "MainDB";
+    if (activeDBName !== "MainDB" && activeDBName !== "TempDB") {
+      activeDBName = "MainDB";
+    }
+  } catch (e) {
+    activeDBName = "MainDB";
+  }
+
   loadActiveDB();
   
   // Clean up any corrupted suggestions from previous runs
@@ -189,16 +222,31 @@ function initDatabase() {
   
   // SOW UX: Always launch on login screens by default
   loggedInUser = null;
-  localStorage.removeItem("wms_logged_in_user");
+  try {
+    localStorage.removeItem("wms_logged_in_user");
+  } catch (e) {}
 }
 
 function loadActiveDB() {
-  const raw = localStorage.getItem(activeDBName === "MainDB" ? "wms_main_db" : "wms_temp_db");
-  db = JSON.parse(raw);
+  try {
+    const raw = localStorage.getItem(activeDBName === "MainDB" ? "wms_main_db" : "wms_temp_db");
+    if (raw) {
+      db = JSON.parse(raw);
+    } else {
+      db = activeDBName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
+    }
+  } catch (err) {
+    console.error("Error loading active DB from localStorage", err);
+    db = activeDBName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
+  }
 }
 
 function saveActiveDB() {
-  localStorage.setItem(activeDBName === "MainDB" ? "wms_main_db" : "wms_temp_db", JSON.stringify(db));
+  try {
+    localStorage.setItem(activeDBName === "MainDB" ? "wms_main_db" : "wms_temp_db", JSON.stringify(db));
+  } catch (err) {
+    console.error("Error saving active DB to localStorage", err);
+  }
   
   // Mirror temporary collections analytics
   syncWebReports();
@@ -206,7 +254,9 @@ function saveActiveDB() {
 
 function switchDatabaseEnvironment(targetDBName, preserveSession = false) {
   activeDBName = targetDBName;
-  localStorage.setItem("wms_active_db_name", activeDBName);
+  try {
+    localStorage.setItem("wms_active_db_name", activeDBName);
+  } catch (e) {}
   loadActiveDB();
   
   // Update Header Elements
@@ -214,7 +264,9 @@ function switchDatabaseEnvironment(targetDBName, preserveSession = false) {
   
   if (!preserveSession) {
     loggedInUser = null;
-    localStorage.removeItem("wms_logged_in_user");
+    try {
+      localStorage.removeItem("wms_logged_in_user");
+    } catch (e) {}
     logAuditEvent("Switched Database environment to " + db.path);
     showToast(`Switched environment to ${db.displayName}. Please sign in.`, "info");
   } else {
@@ -1275,8 +1327,14 @@ function initWebUi() {
 }
 
 function renderCombinedAuditLogs() {
-  const mainRaw = JSON.parse(localStorage.getItem("wms_main_db") || JSON.stringify(DEFAULT_MAIN_DB));
-  const tempRaw = JSON.parse(localStorage.getItem("wms_temp_db") || JSON.stringify(DEFAULT_TEMP_DB));
+  let mainRaw = DEFAULT_MAIN_DB;
+  let tempRaw = DEFAULT_TEMP_DB;
+  try {
+    const mainVal = localStorage.getItem("wms_main_db");
+    if (mainVal) mainRaw = JSON.parse(mainVal);
+    const tempVal = localStorage.getItem("wms_temp_db");
+    if (tempVal) tempRaw = JSON.parse(tempVal);
+  } catch (e) {}
   const tbody = document.getElementById("web-table-combined-audit");
   
   if (!tbody) return;
@@ -1284,8 +1342,12 @@ function renderCombinedAuditLogs() {
 
   // Combine both logs and sort by timestamp descending
   const combined = [];
-  mainRaw.auditLogs.forEach(l => combined.push({...l, dbLabel: "Main DB"}));
-  tempRaw.auditLogs.forEach(l => combined.push({...l, dbLabel: "Temp DB"}));
+  if (mainRaw && mainRaw.auditLogs) {
+    mainRaw.auditLogs.forEach(l => combined.push({...l, dbLabel: "Main DB"}));
+  }
+  if (tempRaw && tempRaw.auditLogs) {
+    tempRaw.auditLogs.forEach(l => combined.push({...l, dbLabel: "Temp DB"}));
+  }
   
   combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
@@ -1308,8 +1370,14 @@ function renderCombinedAuditLogs() {
 }
 
 function syncWebReports() {
-  const mainRaw = JSON.parse(localStorage.getItem("wms_main_db") || JSON.stringify(DEFAULT_MAIN_DB));
-  const tempRaw = JSON.parse(localStorage.getItem("wms_temp_db") || JSON.stringify(DEFAULT_TEMP_DB));
+  let mainRaw = DEFAULT_MAIN_DB;
+  let tempRaw = DEFAULT_TEMP_DB;
+  try {
+    const mainVal = localStorage.getItem("wms_main_db");
+    if (mainVal) mainRaw = JSON.parse(mainVal);
+    const tempVal = localStorage.getItem("wms_temp_db");
+    if (tempVal) tempRaw = JSON.parse(tempVal);
+  } catch (e) {}
 
   const mainTable = document.getElementById("web-table-main-db");
   const tempTable = document.getElementById("web-table-temp-db");
@@ -2022,19 +2090,39 @@ function showToast(message, type = "info") {
 
 function getUserDetails(username) {
   if (!username) return null;
-  const mainDbData = JSON.parse(localStorage.getItem("wms_main_db")) || DEFAULT_MAIN_DB;
-  const tempDbData = JSON.parse(localStorage.getItem("wms_temp_db")) || DEFAULT_TEMP_DB;
+  let mainDbData = DEFAULT_MAIN_DB;
+  let tempDbData = DEFAULT_TEMP_DB;
+  try {
+    const mainRaw = localStorage.getItem("wms_main_db");
+    if (mainRaw) mainDbData = JSON.parse(mainRaw);
+    const tempRaw = localStorage.getItem("wms_temp_db");
+    if (tempRaw) tempDbData = JSON.parse(tempRaw);
+  } catch (e) {
+    console.error("Error reading users in getUserDetails", e);
+  }
   const allUsers = [...(mainDbData.users || []), ...(tempDbData.users || [])];
   return allUsers.find(u => u.username.toLowerCase() === username.toLowerCase());
 }
 
 function validateLoginCredentials(username, password, dbEnvName) {
-  const targetKey = dbEnvName === "MainDB" ? "wms_main_db" : "wms_temp_db";
-  const rawDb = localStorage.getItem(targetKey);
-  if (!rawDb) return false;
-  const parsed = JSON.parse(rawDb);
-  if (!parsed.users) return false;
-  return parsed.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+  try {
+    const targetKey = dbEnvName === "MainDB" ? "wms_main_db" : "wms_temp_db";
+    const rawDb = localStorage.getItem(targetKey);
+    let dbData = dbEnvName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
+    if (rawDb) {
+      try {
+        dbData = JSON.parse(rawDb);
+      } catch (e) {}
+    }
+    if (!dbData || !dbData.users || dbData.users.length === 0) {
+      dbData = dbEnvName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
+    }
+    return dbData.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+  } catch (err) {
+    console.error("Error validating credentials", err);
+    const fallbackDb = dbEnvName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
+    return fallbackDb.users.some(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+  }
 }
 
 function initUserAdmin() {
@@ -2072,11 +2160,14 @@ function initUserAdmin() {
 
       // Load target DB data
       const dbKey = newDbEnv === "MainDB" ? "wms_main_db" : "wms_temp_db";
-      const targetDb = JSON.parse(localStorage.getItem(dbKey));
-
+      let targetDb = null;
+      try {
+        const raw = localStorage.getItem(dbKey);
+        if (raw) targetDb = JSON.parse(raw);
+      } catch (e) {}
+      
       if (!targetDb) {
-        showToast("Database error", "danger");
-        return;
+        targetDb = newDbEnv === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
       }
 
       // Check if user already exists
@@ -2098,10 +2189,11 @@ function initUserAdmin() {
       };
 
       targetDb.users.push(newUser);
-      localStorage.setItem(dbKey, JSON.stringify(targetDb));
+      try {
+        localStorage.setItem(dbKey, JSON.stringify(targetDb));
+      } catch (e) {}
 
-      // Log audit event to the target database
-      const timestamp = getFormattedTimestamp();
+      if (!targetDb.auditLogs) targetDb.auditLogs = [];
       targetDb.auditLogs.unshift({
         timestamp: timestamp,
         user: loggedInUser || "System Admin",
@@ -2109,7 +2201,9 @@ function initUserAdmin() {
         db: dbPath,
         ip: "127.0.0.1 (Local)"
       });
-      localStorage.setItem(dbKey, JSON.stringify(targetDb));
+      try {
+        localStorage.setItem(dbKey, JSON.stringify(targetDb));
+      } catch (e) {}
 
       // If we are currently connected to this database, update the runtime db object
       if (newDbEnv === activeDBName) {
@@ -2133,8 +2227,14 @@ function refreshUserTable() {
   const tbody = document.querySelector("#web-pane-users tbody");
   if (!tbody) return;
 
-  const mainDbData = JSON.parse(localStorage.getItem("wms_main_db")) || DEFAULT_MAIN_DB;
-  const tempDbData = JSON.parse(localStorage.getItem("wms_temp_db")) || DEFAULT_TEMP_DB;
+  let mainDbData = DEFAULT_MAIN_DB;
+  let tempDbData = DEFAULT_TEMP_DB;
+  try {
+    const mainRaw = localStorage.getItem("wms_main_db");
+    if (mainRaw) mainDbData = JSON.parse(mainRaw);
+    const tempRaw = localStorage.getItem("wms_temp_db");
+    if (tempRaw) tempDbData = JSON.parse(tempRaw);
+  } catch (e) {}
 
   const mainUsers = mainDbData.users || [];
   const tempUsers = tempDbData.users || [];
