@@ -187,8 +187,9 @@ function initDatabase() {
     saveActiveDB();
   }
   
-  // Check active user session
-  loggedInUser = localStorage.getItem("wms_logged_in_user") || null;
+  // SOW UX: Always launch on login screens by default
+  loggedInUser = null;
+  localStorage.removeItem("wms_logged_in_user");
 }
 
 function loadActiveDB() {
@@ -203,7 +204,7 @@ function saveActiveDB() {
   syncWebReports();
 }
 
-function switchDatabaseEnvironment(targetDBName) {
+function switchDatabaseEnvironment(targetDBName, preserveSession = false) {
   activeDBName = targetDBName;
   localStorage.setItem("wms_active_db_name", activeDBName);
   loadActiveDB();
@@ -211,19 +212,17 @@ function switchDatabaseEnvironment(targetDBName) {
   // Update Header Elements
   document.getElementById("active-db-label").textContent = `DB: ${db.path}`;
   
-  // Sync form defaults based on role/auth
-  if (activeDBName === "MainDB") {
-    loggedInUser = "admin";
+  if (!preserveSession) {
+    loggedInUser = null;
+    localStorage.removeItem("wms_logged_in_user");
+    logAuditEvent("Switched Database environment to " + db.path);
+    showToast(`Switched environment to ${db.displayName}. Please sign in.`, "info");
   } else {
-    loggedInUser = "cashier";
+    logAuditEvent("Logged in to Database environment " + db.path);
+    showToast(`Connected to ${db.displayName}`, "success");
   }
-  localStorage.setItem("wms_logged_in_user", loggedInUser);
-  
-  // Add audit log entry
-  logAuditEvent("Switched Database environment to " + db.path);
   
   refreshConnectedUI();
-  showToast(`Connected to ${db.displayName}`, "success");
 }
 
 function refreshConnectedUI() {
@@ -339,7 +338,7 @@ function initViewSwitcher() {
   // DB toggle button on shell header
   document.getElementById("btn-toggle-account").addEventListener("click", () => {
     const nextDB = activeDBName === "MainDB" ? "TempDB" : "MainDB";
-    switchDatabaseEnvironment(nextDB);
+    switchDatabaseEnvironment(nextDB, false);
   });
 
   // Hamburger Menu toggle for Mobile viewports
@@ -439,7 +438,7 @@ function initAndroidUi() {
     }
     
     localStorage.setItem("wms_logged_in_user", loggedInUser);
-    switchDatabaseEnvironment(targetEnv);
+    switchDatabaseEnvironment(targetEnv, true);
   });
 
   // Logout Handler
@@ -879,7 +878,7 @@ function initWindowsUi() {
       }
       
       localStorage.setItem("wms_logged_in_user", loggedInUser);
-      switchDatabaseEnvironment(targetEnv);
+      switchDatabaseEnvironment(targetEnv, true);
     });
   }
 
