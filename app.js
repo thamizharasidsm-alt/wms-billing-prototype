@@ -307,6 +307,7 @@ function logAuditEvent(action) {
 // ========================================================
 
 function initViewSwitcher() {
+  document.body.className = "active-view-android-view";
   const switchBtns = document.querySelectorAll(".switch-btn");
   const panels = document.querySelectorAll(".view-panel");
 
@@ -324,6 +325,7 @@ function initViewSwitcher() {
       activePanel.classList.add("active");
       
       activeDevice = target;
+      document.body.className = `active-view-${target}`;
       
       // If Web View, redraw charts
       if (target === "web-view") {
@@ -339,6 +341,30 @@ function initViewSwitcher() {
     const nextDB = activeDBName === "MainDB" ? "TempDB" : "MainDB";
     switchDatabaseEnvironment(nextDB);
   });
+
+  // Hamburger Menu toggle for Mobile viewports
+  const hamburgerBtn = document.getElementById("shell-hamburger");
+  const deviceSwitcher = document.querySelector(".device-switcher");
+
+  if (hamburgerBtn && deviceSwitcher) {
+    hamburgerBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deviceSwitcher.classList.toggle("show");
+    });
+
+    // Close menu when clicking switcher links
+    const switcherBtns = deviceSwitcher.querySelectorAll(".switch-btn");
+    switcherBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        deviceSwitcher.classList.remove("show");
+      });
+    });
+
+    // Close menu when clicking anywhere else
+    document.addEventListener("click", () => {
+      deviceSwitcher.classList.remove("show");
+    });
+  }
 }
 
 function updateAndroidClock() {

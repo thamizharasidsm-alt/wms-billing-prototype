@@ -21,11 +21,11 @@
   --glass-text-muted: #9CA3AF;
   
   /* Neumorphism (Android Light) Tokens */
-  --neu-bg: #E3E9F1;
-  --neu-shadow-dark: rgba(163, 177, 198, 0.7);
-  --neu-shadow-light: rgba(255, 255, 255, 0.9);
-  --neu-text: #374151;
-  --neu-text-muted: #6B7280;
+  --neu-bg: #e5ebf4;
+  --neu-shadow-dark: rgba(163, 178, 199, 0.8);
+  --neu-shadow-light: rgba(255, 255, 255, 0.95);
+  --neu-text: #1e293b;
+  --neu-text-muted: #475569;
   
   /* General Shell Layout */
   --shell-header-height: 70px;
@@ -670,7 +670,7 @@ input, select, button {
 }
 
 .neu-radio-container:hover input ~ .checkmark {
-  background-color: #f0f4f8;
+  background-color: #dbe5f0;
 }
 
 .neu-radio-container input:checked ~ .checkmark {
@@ -753,7 +753,7 @@ input, select, button {
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .user-profile {
@@ -914,7 +914,7 @@ input, select, button {
 }
 
 .highlight-card {
-  background: linear-gradient(135deg, var(--neu-bg), #dbeafe);
+  background: linear-gradient(135deg, var(--neu-bg), rgba(45, 127, 249, 0.15));
 }
 
 .neu-divider {
@@ -1058,7 +1058,7 @@ input, select, button {
 /* Android Application Bottom Tabbar */
 .android-navigation {
   height: 56px;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   display: flex;
   background-color: var(--neu-bg);
 }
@@ -2433,8 +2433,8 @@ select.win-input option {
 }
 
 select.neu-input option {
-  background-color: #e3e9f1 !important;
-  color: #374151 !important;
+  background-color: #e5ebf4 !important;
+  color: #1e293b !important;
 }
 
 /* Windows login screen styling */
@@ -2526,4 +2526,438 @@ select.neu-input option {
 #android-view .autocomplete-item:hover {
   background-color: rgba(45, 127, 249, 0.12) !important;
   color: var(--color-primary) !important;
+}
+
+/* ======================================================== */
+/* 15. MOBILE RESPONSIVENESS & HAMBURGER SYSTEM             */
+/* ======================================================== */
+
+@media (max-width: 768px) {
+  /* Shell Header Adjustments */
+  .shell-header {
+    padding: 0 12px;
+    position: relative;
+  }
+  
+  .logo-area h1 {
+    font-size: 0.95rem;
+  }
+  
+  .logo-area .sub-label {
+    display: none;
+  }
+
+  /* Don't show the DB Related path information on top bar */
+  .status-indicator {
+    display: none !important;
+  }
+
+  /* Hamburger Menu Button */
+  .hamburger-menu {
+    display: flex !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid var(--glass-border) !important;
+    color: var(--glass-text) !important;
+    font-size: 1.25rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    align-items: center !important;
+    justify-content: center !important;
+    order: 3;
+    transition: all 0.2s ease !important;
+  }
+
+  .hamburger-menu:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* Expandable Switcher Menu */
+  .device-switcher {
+    display: none !important; /* hidden by default */
+    flex-direction: column !important;
+    position: absolute !important;
+    top: var(--shell-header-height) !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: rgba(10, 15, 25, 0.96) !important;
+    backdrop-filter: blur(25px) !important;
+    -webkit-backdrop-filter: blur(25px) !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    padding: 10px !important;
+    border-radius: 0 !important;
+    gap: 6px !important;
+    z-index: 1000 !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+  }
+
+  .device-switcher.show {
+    display: flex !important;
+  }
+
+  .switch-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .environment-status {
+    order: 2;
+  }
+
+  #btn-toggle-account {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Viewpanel & Bezel Scale Fix to prevent overflow inside viewport */
+  .view-panel {
+    padding: 8px !important;
+  }
+
+  .android-emulator {
+    width: 100% !important;
+    max-width: 360px !important;
+    height: 720px !important;
+  }
+
+  .emulator-bezel {
+    border-radius: 36px !important;
+    padding: 8px !important;
+  }
+
+  .emulator-screen {
+    border-radius: 28px !important;
+  }
+
+  .android-status-bar {
+    padding: 4px 16px 0 16px !important;
+  }
+
+  .android-header {
+    padding: 0 12px !important;
+  }
+
+  .mob-widget-grid {
+    margin: 8px !important;
+  }
+
+  .mob-quick-actions {
+    padding: 0 8px !important;
+  }
+
+  /* Responsive Modals */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 14px !important;
+  }
+  
+  .viewfinder-container {
+    height: 180px !important;
+  }
+
+  .mock-doc-feed {
+    width: 95% !important;
+    height: 90% !important;
+    font-size: 0.62rem !important;
+    padding: 6px !important;
+  }
+  
+  .camera-lens-grid {
+    border-width: 10px !important;
+  }
+
+  .print-modal-content {
+    width: 95% !important;
+  }
+  
+  .receipt-paper {
+    padding: 16px !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* For windows Auto Rotate the view into Landscape on mobile viewports */
+  #windows-view {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  .windows-container {
+    width: 760px !important;
+    height: 365px !important;
+    min-height: 0 !important;
+    transform: rotate(90deg) !important;
+    transform-origin: center center !important;
+    flex-shrink: 0 !important;
+    gap: 8px !important;
+  }
+
+  /* Responsive Windows components for landscape view */
+  .windows-container .win-app-header {
+    padding: 6px 12px !important;
+  }
+
+  .windows-container .win-app-header h2 {
+    font-size: 0.82rem !important;
+  }
+
+  .windows-container .win-db-path {
+    font-size: 0.6rem !important;
+  }
+
+  .windows-container .win-status-widgets {
+    gap: 8px !important;
+  }
+
+  .windows-container .stat-indicator .stat-label {
+    font-size: 0.5rem !important;
+  }
+
+  .windows-container .stat-indicator .stat-value {
+    font-size: 0.75rem !important;
+  }
+
+  .windows-container .win-action-btn {
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .windows-container .win-sidebar {
+    width: 160px !important;
+    padding: 8px !important;
+    gap: 8px !important;
+  }
+
+  .windows-container .win-nav-item {
+    padding: 8px 10px !important;
+    font-size: 0.72rem !important;
+    gap: 8px !important;
+  }
+
+  .windows-container .win-sidebar-footer {
+    padding-top: 6px !important;
+    font-size: 0.52rem !important;
+  }
+
+  .windows-container .win-grid-2x2 {
+    gap: 8px !important;
+  }
+
+  .windows-container .widget-box {
+    padding: 10px !important;
+  }
+
+  .windows-container .widget-header h3 {
+    font-size: 0.8rem !important;
+  }
+
+  .windows-container .rate-large {
+    font-size: 1.6rem !important;
+  }
+
+  .windows-container .rate-edit-inline {
+    gap: 6px !important;
+  }
+
+  .windows-container .win-input {
+    padding: 6px 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .windows-container .win-btn {
+    padding: 6px 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .windows-container .scale-sim-body {
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .windows-container .lcd-value {
+    font-size: 1.8rem !important;
+  }
+
+  .windows-container .lcd-unit {
+    font-size: 0.85rem !important;
+  }
+
+  .windows-container .win-weighment-grid {
+    gap: 8px !important;
+  }
+
+  .windows-container .flow-header h3 {
+    font-size: 0.75rem !important;
+  }
+
+  .windows-container .win-input-group label {
+    font-size: 0.65rem !important;
+  }
+
+  .windows-container .win-calculations-box {
+    padding: 6px !important;
+  }
+
+  .windows-container .calc-grid .grid-item h3 {
+    font-size: 0.8rem !important;
+  }
+
+  .windows-container .calc-grid .grid-item.highlight h2 {
+    font-size: 1.05rem !important;
+  }
+
+  .windows-container .win-payment-methods .pay-radio span {
+    padding: 6px !important;
+    font-size: 0.65rem !important;
+  }
+
+  .windows-container .search-form {
+    grid-template-columns: 1.5fr 1fr 1fr 1fr auto !important;
+    gap: 6px !important;
+  }
+
+  .windows-container .win-data-table th,
+  .windows-container .win-data-table td {
+    padding: 6px 8px !important;
+    font-size: 0.68rem !important;
+  }
+
+  /* Auto-rotate modals and toast container when windows view is active on mobile */
+  body.active-view-windows-view .modal-content {
+    transform: scale(0.9) rotate(90deg) !important;
+  }
+
+  body.active-view-windows-view .modal-overlay.active .modal-content {
+    transform: scale(1) rotate(90deg) !important;
+  }
+
+  body.active-view-windows-view .toast-container {
+    transform: rotate(90deg) !important;
+    transform-origin: bottom right !important;
+    bottom: 120px !important;
+    right: 30px !important;
+  }
+
+  /* For web Auto Rotate the view into Landscape on mobile viewports */
+  #web-view {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  .web-container {
+    width: 760px !important;
+    height: 365px !important;
+    min-height: 0 !important;
+    transform: rotate(90deg) !important;
+    transform-origin: center center !important;
+    flex-shrink: 0 !important;
+    gap: 8px !important;
+  }
+
+  /* Responsive Web components for landscape view */
+  .web-container .web-nav-bar {
+    padding: 6px 12px !important;
+  }
+
+  .web-container .web-nav-bar .logo {
+    font-size: 0.82rem !important;
+  }
+
+  .web-container .web-links {
+    gap: 10px !important;
+  }
+
+  .web-container .web-links a {
+    font-size: 0.72rem !important;
+  }
+
+  .web-container .web-profile {
+    gap: 8px !important;
+  }
+
+  .web-container .web-profile .user-role {
+    font-size: 0.62rem !important;
+    padding: 2px 4px !important;
+  }
+
+  .web-container .web-stats-row {
+    gap: 8px !important;
+  }
+
+  .web-container .web-card {
+    padding: 10px !important;
+  }
+
+  .web-container .web-card h3 {
+    font-size: 0.65rem !important;
+  }
+
+  .web-container .web-card h1 {
+    font-size: 1.5rem !important;
+    margin: 4px 0 !important;
+  }
+
+  .web-container .web-card p {
+    font-size: 0.55rem !important;
+  }
+
+  .web-container .web-isolation-grid {
+    gap: 8px !important;
+  }
+
+  .web-container .panel-header h3 {
+    font-size: 0.75rem !important;
+  }
+
+  .web-container .win-data-table th,
+  .web-container .win-data-table td {
+    padding: 6px 8px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .web-container .mock-chart-container {
+    padding: 8px !important;
+  }
+
+  .web-container .mock-chart-container h3 {
+    font-size: 0.75rem !important;
+  }
+
+  .web-container .mock-chart-container p {
+    font-size: 0.6rem !important;
+  }
+
+  .web-container .web-svg-chart {
+    height: 100px !important;
+  }
+
+  /* Auto-rotate modals and toast container when web view is active on mobile */
+  body.active-view-web-view .modal-content {
+    transform: scale(0.9) rotate(90deg) !important;
+  }
+
+  body.active-view-web-view .modal-overlay.active .modal-content {
+    transform: scale(1) rotate(90deg) !important;
+  }
+
+  body.active-view-web-view .toast-container {
+    transform: rotate(90deg) !important;
+    transform-origin: bottom right !important;
+    bottom: 120px !important;
+    right: 30px !important;
+  }
 }
