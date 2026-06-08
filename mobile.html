@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WMS Mobile Camera Sync Terminal</title>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- MQTT Client JS Library -->
+  <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #e5ebf4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --color-primary: #3b82f6;
+      --color-success: #10b981;
+      --color-danger: #ef4444;
+      --shadow-outset: 8px 8px 16px rgba(163, 178, 199, 0.7), -8px -8px 16px rgba(255, 255, 255, 0.95);
+      --shadow-inset: inset 3px 3px 6px rgba(163, 178, 199, 0.7), inset -3px -3px 6px rgba(255, 255, 255, 0.95);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 450px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .card {
+      background: var(--bg-color);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-outset);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .status-connecting {
+      background: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+      box-shadow: inset 1px 1px 3px rgba(245, 158, 11, 0.2);
+    }
+
+    .status-connected {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--color-success);
+      box-shadow: inset 1px 1px 3px rgba(16, 185, 129, 0.2);
+    }
+
+    .status-disconnected {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--color-danger);
+      box-shadow: inset 1px 1px 3px rgba(239, 68, 68, 0.2);
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse-animation 1.5s infinite;
+    }
+
+    @keyframes pulse-animation {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+
+    .doc-tabs {
+      display: flex;
+      box-shadow: var(--shadow-inset);
+      border-radius: 12px;
+      padding: 5px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      padding: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: var(--bg-color);
+      color: var(--color-primary);
+      box-shadow: var(--shadow-outset);
+    }
+
+    .camera-box {
+      width: 100%;
+      height: 220px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-inset);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: 2px dashed rgba(163, 178, 199, 0.5);
+    }
+
+    .camera-box:active {
+      background: rgba(163, 178, 199, 0.1);
+    }
+
+    .camera-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+
+    .camera-placeholder span {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .camera-icon {
+      font-size: 2.5rem;
+    }
+
+    #camera-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .sync-btn {
+      border: none;
+      outline: none;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 4px 4px 10px rgba(37, 99, 235, 0.3), -4px -4px 10px rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .sync-btn:disabled {
+      background: #cbd5e1;
+      color: #94a3b8;
+      box-shadow: var(--shadow-inset);
+      cursor: not-allowed;
+    }
+
+    .sync-btn:not(:disabled):active {
+      transform: scale(0.98);
+      box-shadow: var(--shadow-inset);
+    }
+
+    .session-info {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      padding: 8px;
+      box-shadow: var(--shadow-inset);
+      border-radius: 8px;
+    }
+
+    #toast-notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #toast-notification.active {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>WMS Sync Camera</h1>
+      <p>Capture vehicle documents & sync directly to PC</p>
+    </header>
+
+    <div class="card">
+      <div id="connection-status" class="status-badge status-connecting">
+        <div class="pulse"></div>
+        <span id="status-text">Connecting to PC Sync...</span>
+      </div>
+
+      <div class="session-info">
+        SESSION KEY: <span id="session-key-display" style="font-weight: bold; color: var(--color-primary);">------</span>
+      </div>
+
+      <div class="doc-tabs">
+        <button class="tab-btn active" id="tab-rc" onclick="switchDocType('rc')">🚗 Registration (RC)</button>
+        <button class="tab-btn" id="tab-dl" onclick="switchDocType('dl')">👤 Driver License (DL)</button>
+      </div>
+
+      <!-- Native mobile camera trigger -->
+      <div class="camera-box" id="camera-trigger" onclick="triggerMobileCamera()">
+        <div class="camera-placeholder" id="placeholder-content">
+          <div class="camera-icon">📸</div>
+          <span id="instruction-label">Tap to take RC photo</span>
+        </div>
+        <img id="camera-preview" alt="Document Preview">
+      </div>
+
+      <button class="sync-btn" id="btn-sync" disabled onclick="publishSyncPayload()">
+        ⚡ Sync to Windows PC
+      </button>
+    </div>
+  </div>
+
+  <!-- Hidden elements for canvas manipulation -->
+  <input type="file" accept="image/*" capture="camera" id="file-input" style="display: none;" onchange="handleImageCapture(event)">
+  <canvas id="compression-canvas" style="display: none;"></canvas>
+
+  <!-- Toast Toast notifications -->
+  <div id="toast-notification">
+    <span id="toast-icon">✔️</span>
+    <span id="toast-message">Sync successful!</span>
+  </div>
+
+  <script>
+    let currentDocType = 'rc';
+    let selectedImageBase64 = null;
+    let mqttClient = null;
+    let sessionId = null;
+
+    // Load session ID from query params
+    const urlParams = new URLSearchParams(window.location.search);
+    sessionId = urlParams.get('session');
+
+    if (sessionId) {
+      document.getElementById('session-key-display').textContent = sessionId.toUpperCase();
+      initMqtt();
+    } else {
+      document.getElementById('status-text').textContent = 'Error: No Session ID';
+      document.getElementById('connection-status').className = 'status-badge status-disconnected';
+      showToast('⚠️ Sync unavailable: Open link via QR code on PC dashboard', 'danger');
+    }
+
+    function initMqtt() {
+      // Connect to secure WebSocket MQTT broker
+      const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
+      const clientId = 'wms_mobile_' + Math.random().toString(16).substring(2, 8);
+
+      console.log('Connecting to MQTT broker...', brokerUrl);
+      
+      mqttClient = mqtt.connect(brokerUrl, {
+        clientId: clientId,
+        clean: true,
+        connectTimeout: 4000
+      });
+
+      mqttClient.on('connect', () => {
+        console.log('Connected to sync broker successfully.');
+        document.getElementById('status-text').textContent = 'Connected & Ready';
+        document.getElementById('connection-status').className = 'status-badge status-connected';
+      });
+
+      mqttClient.on('error', (err) => {
+        console.error('MQTT connection error:', err);
+        document.getElementById('status-text').textContent = 'Sync Offline';
+        document.getElementById('connection-status').className = 'status-badge status-disconnected';
+      });
+
+      mqttClient.on('close', () => {
+        console.warn('MQTT connection closed.');
+        document.getElementById('status-text').textContent = 'Sync Disconnected';
+        document.getElementById('connection-status').className = 'status-badge status-disconnected';
+      });
+    }
+
+    function switchDocType(type) {
+      currentDocType = type;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${type}`).classList.add('active');
+      
+      const label = document.getElementById('instruction-label');
+      if (type === 'rc') {
+        label.textContent = 'Tap to take RC photo';
+      } else {
+        label.textContent = 'Tap to take DL photo';
+      }
+
+      // Reset preview unless user captured something
+      if (!selectedImageBase64) {
+        document.getElementById('camera-preview').style.display = 'none';
+        document.getElementById('placeholder-content').style.display = 'flex';
+      }
+    }
+
+    function triggerMobileCamera() {
+      document.getElementById('file-input').click();
+    }
+
+    function handleImageCapture(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          // Compress image using canvas
+          const canvas = document.getElementById('compression-canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Maintain aspect ratio, max width/height = 360px
+          const maxDimension = 360;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > maxDimension) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            }
+          } else {
+            if (height > maxDimension) {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Export as highly compressed JPEG
+          selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          
+          // Update Preview
+          const preview = document.getElementById('camera-preview');
+          preview.src = selectedImageBase64;
+          preview.style.display = 'block';
+          document.getElementById('placeholder-content').style.display = 'none';
+          
+          // Enable Sync Button
+          document.getElementById('btn-sync').disabled = false;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function publishSyncPayload() {
+      if (!mqttClient || !mqttClient.connected) {
+        showToast('⚠️ Sync error: Connection to server lost', 'danger');
+        return;
+      }
+
+      document.getElementById('btn-sync').disabled = true;
+      document.getElementById('btn-sync').textContent = 'Syncing...';
+
+      // Mock OCR text based on Indian standard formats
+      let ocrText = '';
+      if (currentDocType === 'rc') {
+        ocrText = 'TN-37-BY-1234';
+      } else {
+        ocrText = 'Karthik Kumar';
+      }
+
+      const payload = {
+        type: currentDocType,
+        image: selectedImageBase64,
+        text: ocrText,
+        timestamp: new Date().toLocaleTimeString()
+      };
+
+      const topic = `wms/sync/${sessionId}`;
+      mqttClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
+        document.getElementById('btn-sync').disabled = false;
+        document.getElementById('btn-sync').textContent = '⚡ Sync to Windows PC';
+
+        if (err) {
+          console.error('Publish error:', err);
+          showToast('❌ Sync failed to upload.', 'danger');
+        } else {
+          console.log('Publish successful to topic:', topic);
+          showToast('✔️ Transmitted successfully!', 'success');
+          
+          // Reset form preview
+          selectedImageBase64 = null;
+          document.getElementById('camera-preview').style.display = 'none';
+          document.getElementById('placeholder-content').style.display = 'flex';
+          document.getElementById('btn-sync').disabled = true;
+        }
+      });
+    }
+
+    function showToast(message, type) {
+      const toast = document.getElementById('toast-notification');
+      const msgSpan = document.getElementById('toast-message');
+      const iconSpan = document.getElementById('toast-icon');
+
+      msgSpan.textContent = message;
+      iconSpan.textContent = type === 'success' ? '✔️' : '⚠️';
+      
+      toast.classList.add('active');
+      setTimeout(() => {
+        toast.classList.remove('active');
+      }, 3000);
+    }
+  </script>
+
+</body>
+</html>

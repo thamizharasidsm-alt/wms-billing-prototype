@@ -121,6 +121,8 @@ let db = null; // References current active DB state object
 let loggedInUser = null; // Tracks current session user
 let activeDevice = "android-view"; // Current main viewing tab
 let webcamStream = null; // Live webcam stream reference
+let syncSessionId = null; // Mobile sync session ID
+let syncMqttClient = null; // Mobile sync MQTT client reference
 
 // Scale Simulation
 let currentScaleWeight = 0;
@@ -142,6 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initOcrCamera();
   initUserAdmin();
   initCancellationUi();
+  initMobileSync();
   
   // Start simulated time
   setInterval(updateAndroidClock, 1000);
@@ -371,6 +374,180 @@ function submitTransactionCancellation() {
   // Update UI displays
   refreshConnectedUI();
   showToast(`Transaction ${txId} successfully cancelled!`, "success");
+}
+
+// ========================================================
+// 2.6 GITHUB PAGES COMPATIBLE MOBILE CAMERA SYNC
+// ========================================================
+
+function initMobileSync() {
+  const syncBtn = document.getElementById("btn-win-mobile-sync");
+  const modal = document.getElementById("mobile-sync-modal");
+  const closeBtn = document.getElementById("btn-close-sync-modal");
+  const doneBtn = document.getElementById("btn-close-sync-done");
+
+  if (syncBtn && modal) {
+    syncBtn.addEventListener("click", () => {
+      openMobileSyncModal();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+    });
+  }
+
+  if (doneBtn) {
+    doneBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+    });
+  }
+
+  // Connect to MQTT broker on PC side
+  startMqttSyncConnection();
+}
+
+function startMqttSyncConnection() {
+  if (typeof mqtt === "undefined") {
+    console.warn("MQTT library not loaded. Mobile sync will be disabled.");
+    const status = document.getElementById("sync-broker-status");
+    if (status) {
+      status.textContent = "🔴 Sync unavailable (MQTT load error)";
+      status.style.color = "var(--color-danger)";
+    }
+    return;
+  }
+
+  // Generate unique 6-character session ID
+  if (!syncSessionId) {
+    syncSessionId = Math.random().toString(36).substring(2, 8);
+  }
+
+  const brokerUrl = "wss://broker.emqx.io:8084/mqtt";
+  const clientId = "wms_pc_" + Math.random().toString(16).substring(2, 8);
+  const statusEl = document.getElementById("sync-broker-status");
+
+  console.log("PC connecting to MQTT sync broker...", brokerUrl);
+
+  try {
+    syncMqttClient = mqtt.connect(brokerUrl, {
+      clientId: clientId,
+      clean: true,
+      connectTimeout: 4000
+    });
+
+    syncMqttClient.on("connect", () => {
+      console.log("PC connected to sync broker. Session:", syncSessionId);
+      if (statusEl) {
+        statusEl.textContent = "🟢 Sync channel active and waiting...";
+        statusEl.style.color = "var(--color-success)";
+        statusEl.style.background = "rgba(16, 185, 129, 0.12)";
+        statusEl.style.border = "1px solid rgba(16, 185, 129, 0.2)";
+      }
+
+      // Subscribe to session topic
+      const topic = `wms/sync/${syncSessionId}`;
+      syncMqttClient.subscribe(topic, { qos: 1 }, (err) => {
+        if (err) {
+          console.error("Subscription error:", err);
+        } else {
+          console.log("PC subscribed to topic:", topic);
+        }
+      });
+    });
+
+    syncMqttClient.on("message", (topic, message) => {
+      try {
+        const payload = JSON.parse(message.toString());
+        handleSyncMessage(payload);
+      } catch (e) {
+        console.error("Error parsing sync message:", e);
+      }
+    });
+
+    syncMqttClient.on("error", (err) => {
+      console.error("PC MQTT error:", err);
+      if (statusEl) {
+        statusEl.textContent = "🔴 Sync offline";
+        statusEl.style.color = "var(--color-danger)";
+      }
+    });
+
+    syncMqttClient.on("close", () => {
+      if (statusEl) {
+        statusEl.textContent = "🟡 Reconnecting to sync broker...";
+        statusEl.style.color = "#f59e0b";
+      }
+    });
+
+  } catch (err) {
+    console.error("Failed to start MQTT connection:", err);
+  }
+}
+
+function openMobileSyncModal() {
+  const modal = document.getElementById("mobile-sync-modal");
+  if (!modal) return;
+
+  // Resolve target mobile URL (if on local file scheme, fallback to localhost)
+  let origin = window.location.origin;
+  if (origin === "null" || origin === "file://") {
+    // Treat as local file, fallback to github deployment or localhost path for preview
+    origin = "https://thamizharasidsm-alt.github.io/wms-billing-prototype";
+  }
+  const syncUrl = `${origin}/mobile.html?session=${syncSessionId}`;
+
+  // Fill text input
+  document.getElementById("sync-url-text").value = syncUrl;
+
+  // Generate QR Code using Google Charts API (fast, reliable, free)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(syncUrl)}`;
+  document.getElementById("sync-qr-code").src = qrUrl;
+
+  modal.classList.add("active");
+}
+
+function handleSyncMessage(data) {
+  console.log("Received mobile camera sync data:", data);
+
+  const type = data.type; // 'rc' or 'dl'
+  const image = data.image; // base64 string
+  const text = data.text; // OCR text
+
+  // Populate inputs on Windows Arrival Pane
+  if (type === "rc") {
+    const vehInput = document.getElementById("win-arr-veh");
+    if (vehInput) {
+      vehInput.value = text.toUpperCase();
+      vehInput.dispatchEvent(new Event("input"));
+      vehInput.dispatchEvent(new Event("change"));
+    }
+    showToast(`Mobile Sync: Auto-filled Vehicle "${text}"`, "success");
+    logAuditEvent(`Mobile Synced vehicle RC photo. Extracted plate: "${text}"`);
+  } else if (type === "dl") {
+    const driverInput = document.getElementById("win-arr-driver");
+    if (driverInput) {
+      driverInput.value = text;
+      driverInput.dispatchEvent(new Event("input"));
+      driverInput.dispatchEvent(new Event("change"));
+    }
+    showToast(`Mobile Sync: Auto-filled Driver "${text}"`, "success");
+    logAuditEvent(`Mobile Synced driver DL photo. Extracted name: "${text}"`);
+  }
+
+  // Render Thumbnail Preview on PC Active Weighment panel
+  const previewContainer = document.getElementById("win-sync-preview-container");
+  const previewThumb = document.getElementById("win-sync-preview-thumbnail");
+  const previewType = document.getElementById("win-sync-preview-type");
+  const previewText = document.getElementById("win-sync-preview-text");
+
+  if (previewContainer && previewThumb) {
+    previewThumb.src = image;
+    previewType.textContent = type === "rc" ? "Registration (RC)" : "Driver License (DL)";
+    previewText.textContent = text;
+    previewContainer.classList.remove("hidden");
+  }
 }
 
 function refreshConnectedUI() {
@@ -1044,6 +1221,7 @@ function initWindowsUi() {
   winNavItems.forEach(item => {
     item.addEventListener("click", () => {
       const targetPane = item.getAttribute("data-win-pane");
+      if (!targetPane) return; // Skip if it's just a modal trigger (e.g. Mobile Sync)
       
       winNavItems.forEach(i => i.classList.remove("active"));
       winPanes.forEach(p => p.classList.remove("active"));

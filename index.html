@@ -494,6 +494,9 @@
                 <button class="win-nav-item" data-win-pane="win-pane-audit">
                   <span class="icon">📜</span> System Audit Logs
                 </button>
+                <button class="win-nav-item" id="btn-win-mobile-sync">
+                  <span class="icon">📱</span> Mobile Camera Sync
+                </button>
               </nav>
 
               <div class="win-sidebar-footer">
@@ -625,6 +628,16 @@
                         <div class="input-actions-wrapper">
                           <input type="number" id="win-arr-tare" class="win-input font-mono" placeholder="0">
                           <button class="win-btn win-btn-accent scale-trigger" id="btn-win-read-tare">Read Scale</button>
+                        </div>
+                      </div>
+
+                      <!-- Synced Preview Box -->
+                      <div id="win-sync-preview-container" class="hidden" style="margin-top: 15px; border-top: 1px dashed var(--glass-border); padding-top: 15px; display: flex; align-items: center; gap: 10px;">
+                        <div style="font-size: 0.72rem; color: var(--glass-text-muted);">Synced Photo:</div>
+                        <img id="win-sync-preview-thumbnail" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border);" src="" alt="Thumbnail">
+                        <div style="font-size: 0.72rem;">
+                          <b id="win-sync-preview-type" style="color: var(--color-primary); text-transform: uppercase;">RC</b>: 
+                          <span id="win-sync-preview-text" class="font-mono">TN-37-BY-1234</span>
                         </div>
                       </div>
 
@@ -1196,10 +1209,48 @@
     </div>
   </div>
 
+  <!-- ============================================== -->
+  <!-- MODAL: MOBILE CAMERA SYNC DETAILS             -->
+  <!-- ============================================== -->
+  <div id="mobile-sync-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow" style="width: 420px; max-width: 95%;">
+      <div class="modal-header">
+        <h3>📱 Mobile Sync Terminal</h3>
+        <button class="close-btn" id="btn-close-sync-modal">✕</button>
+      </div>
+      
+      <div class="modal-body text-center" style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px 0;">
+        <p style="font-size: 0.85rem; color: var(--glass-text-muted); line-height: 1.4;">
+          Connect your mobile device to scan vehicle details (RC/DL) directly into this PC terminal.
+        </p>
+
+        <!-- QR Code container -->
+        <div style="background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; width: 184px; height: 184px;">
+          <img id="sync-qr-code" style="width: 160px; height: 160px; display: block;" src="" alt="Sync QR Code">
+        </div>
+
+        <div style="width: 100%;">
+          <p style="font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;">Scan QR with Phone or open URL:</p>
+          <input type="text" id="sync-url-text" class="win-input text-center" readonly style="font-size: 0.72rem; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 6px; padding: 8px; color: var(--glass-text-muted); width: 100%; cursor: pointer;" onclick="this.select(); document.execCommand('copy'); showToast('URL copied to clipboard!', 'success');">
+        </div>
+
+        <div id="sync-broker-status" class="win-badge alert-cancelled" style="font-size: 0.75rem; padding: 6px 12px; border-radius: 12px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2);">
+          🟡 Connecting to cloud sync broker...
+        </div>
+      </div>
+      
+      <div class="modal-footer" style="margin-top: 10px;">
+        <button class="win-btn w-100" id="btn-close-sync-done">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- JS Link -->
+  <!-- MQTT Client Library for Mobile Sync -->
+  <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
