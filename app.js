@@ -490,13 +490,27 @@ function openMobileSyncModal() {
   const modal = document.getElementById("mobile-sync-modal");
   if (!modal) return;
 
-  // Resolve target mobile URL (if on local file scheme, fallback to localhost)
+  // Resolve target mobile URL dynamically (handling subdirectory paths for GitHub Pages)
   let origin = window.location.origin;
-  if (origin === "null" || origin === "file://") {
-    // Treat as local file, fallback to github deployment or localhost path for preview
-    origin = "https://thamizharasidsm-alt.github.io/wms-billing-prototype";
+  let path = window.location.pathname;
+
+  // If path ends with index.html, strip it
+  if (path.endsWith("index.html")) {
+    path = path.substring(0, path.lastIndexOf("index.html"));
   }
-  const syncUrl = `${origin}/mobile.html?session=${syncSessionId}`;
+  // Ensure path ends with slash
+  if (!path.endsWith("/")) {
+    path += "/";
+  }
+
+  let syncUrl = "";
+  if (origin === "null" || origin === "file://" || window.location.protocol === "file:") {
+    // Treat as local file, fallback to default GitHub Pages path
+    syncUrl = `https://thamizharasidsm-alt.github.io/wms-billing-prototype/mobile.html?session=${syncSessionId}`;
+  } else {
+    // Dynamically build based on current host and path (preserves repo subdirectory)
+    syncUrl = `${origin}${path}mobile.html?session=${syncSessionId}`;
+  }
 
   // Fill text input
   document.getElementById("sync-url-text").value = syncUrl;
