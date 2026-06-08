@@ -538,7 +538,7 @@ function handleSyncMessage(data) {
   if (previewContainer && previewThumb) {
     previewThumb.src = image;
     previewType.textContent = type === "rc" ? "Registration (RC)" : "Driver License (DL)";
-    previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem; animation: pulse-animation 1.5s infinite;">⏳ Running OCR...</span>`;
+    previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem; animation: pulse-animation 1.5s infinite;">⏳ Booting OCR...</span>`;
     previewContainer.classList.remove("hidden");
   }
 
@@ -548,30 +548,61 @@ function handleSyncMessage(data) {
     Tesseract.recognize(
       image,
       'eng',
-      { logger: m => console.log("Tesseract OCR:", m) }
+      { logger: m => {
+          console.log("Tesseract OCR:", m);
+          if (m.status === "recognizing" && previewText) {
+            const pct = Math.round(m.progress * 100);
+            previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem;">⏳ OCR Scanning: ${pct}%</span>`;
+          }
+        }
+      }
     ).then(({ data: { text: extractedText } }) => {
       console.log("Tesseract Extracted Raw Text:", extractedText);
       let parsedValue = null;
 
       if (type === "rc") {
-        // Find Indian License Plate format: e.g. TN-37-BY-1234
-        const plateRegex = /[A-Z]{2}[-\s]?[0-9A-Z]{1,2}[-\s]?[A-Z]{1,3}[-\s]?[0-9]{4}/i;
-        const match = extractedText.match(plateRegex);
+        // Clean text of spaces and special chars to handle split-line plates
+        const cleanText = extractedText.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        // Find Indian License Plate format: e.g. RJ41SH7917
+        const plateRegex = /[A-Z]{2}[0-9A-Z]{2}[A-Z]{1,3}[0-9]{4}/;
+        const match = cleanText.match(plateRegex);
         if (match) {
-          parsedValue = match[0].toUpperCase().replace(/\s+/g, '-');
+          const matchedStr = match[0];
+          // Format back into XX-XX-XX-XXXX
+          parsedValue = matchedStr.substring(0, 2) + "-" + 
+                        matchedStr.substring(2, 4) + "-" + 
+                        matchedStr.substring(4, matchedStr.length - 4) + "-" + 
+                        matchedStr.substring(matchedStr.length - 4);
         }
       } else if (type === "dl") {
-        // Find Driver Name by searching for "Name" keyword
         const lines = extractedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        
+        // 1. Look for label keywords
         for (let i = 0; i < lines.length; i++) {
           if (/(?:name|holder|holder\s+name|name\s+of)/i.test(lines[i])) {
-            let val = lines[i].replace(/^(?:name|holder|holder\s+name|name\s+of|[:\-\s])+/i, '').trim();
-            if (val && val.length > 2) {
+            let val = lines[i].replace(/^(?:name|holder|holder\s+name|name\s+of|[:\-\s])+/i, '').replace(/[^A-Za-z\s]/g, '').trim();
+            if (val && val.length > 3 && !/licence|driving|india|date|valid/i.test(val)) {
               parsedValue = val;
               break;
             }
             if (i + 1 < lines.length) {
-              parsedValue = lines[i + 1].trim();
+              let nextVal = lines[i + 1].replace(/[^A-Za-z\s]/g, '').trim();
+              if (nextVal && nextVal.length > 3 && !/licence|driving|india|date|valid/i.test(nextVal)) {
+                parsedValue = nextVal;
+                break;
+              }
+            }
+          }
+        }
+        
+        // 2. Fallback: Find the first line that looks like a name (2-3 words, only letters, not a stop word)
+        if (!parsedValue) {
+          const stopWords = /licence|driving|india|government|union|transport|date|valid|authority|card|issue|birth|blood|address/i;
+          for (const line of lines) {
+            let cleaned = line.replace(/[^A-Za-z\s]/g, '').trim();
+            const words = cleaned.split(/\s+/);
+            if (words.length >= 2 && words.length <= 4 && !stopWords.test(cleaned) && cleaned.length > 5) {
+              parsedValue = cleaned;
               break;
             }
           }
