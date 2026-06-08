@@ -538,33 +538,23 @@ function handleSyncMessage(data) {
   if (previewContainer && previewThumb) {
     previewThumb.src = image;
     previewType.textContent = type === "rc" ? "Registration (RC)" : "Driver License (DL)";
-    previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem; animation: pulse-animation 1.5s infinite;">⏳ Booting OCR...</span>`;
+    previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem; animation: pulse-animation 1.5s infinite;">⏳ Processing OCR...</span>`;
     previewContainer.classList.remove("hidden");
   }
 
-  showToast("Photo received. Running client-side Tesseract.js OCR...", "info");
+  showToast("Photo received. Processing actual OCR...", "info");
 
-  if (typeof Tesseract !== "undefined") {
-    Tesseract.recognize(
-      image,
-      'eng',
-      { logger: m => {
-          console.log("Tesseract OCR:", m);
-          if (m.status === "recognizing" && previewText) {
-            const pct = Math.round(m.progress * 100);
-            previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem;">⏳ OCR Scanning: ${pct}%</span>`;
-          }
-        }
-      }
-    ).then(({ data: { text: extractedText } }) => {
-      console.log("Tesseract Extracted Raw Text:", extractedText);
+  // Call the hybrid OCR runner
+  runOcrOnImage(image, type)
+    .then(extractedText => {
+      console.log("OCR Extracted Raw Text:", extractedText);
       let parsedValue = null;
 
       if (type === "rc") {
         // Clean text of spaces and special chars to handle split-line plates
         const cleanText = extractedText.toUpperCase().replace(/[^A-Z0-9]/g, '');
         // Find Indian License Plate format: e.g. RJ41SH7917
-        const plateRegex = /[A-Z]{2}[0-9A-Z]{2}[A-Z]{1,3}[0-9]{4}/;
+        const plateRegex = /[A-Z]{2}[0-9A-Z]{2}[0-9A-Z]{1,3}[0-9]{4}/;
         const match = cleanText.match(plateRegex);
         if (match) {
           const matchedStr = match[0];
@@ -609,22 +599,83 @@ function handleSyncMessage(data) {
         }
       }
 
-      // If we parsed a clean value, use it. Otherwise, use fallback mock values
+      // If we parsed a clean value, use it. Otherwise, use raw lines or fallback
       if (parsedValue && parsedValue.length > 2) {
         text = parsedValue;
       } else {
-        console.warn("Could not find structured pattern in OCR, falling back to simulated text.");
+        // If regex parsing failed, let's at least show the first line of what OCR found so they see it's alive!
+        const lines = extractedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length > 0 && lines[0].length > 3) {
+          text = lines[0];
+        } else {
+          console.warn("Could not parse structured text, using simulated fallback.");
+        }
       }
 
       applySyncValuesToForm(type, text, image);
-    }).catch(err => {
-      console.error("Tesseract OCR failed:", err);
+    })
+    .catch(err => {
+      console.error("All OCR methods failed. Falling back to default mock value.", err);
+      showToast("OCR Connection failed. Using simulated fallback values.", "warning");
       applySyncValuesToForm(type, text, image);
     });
-  } else {
-    console.warn("Tesseract library not loaded. Falling back to simulated text.");
-    applySyncValuesToForm(type, text, image);
-  }
+}
+
+function runOcrOnImage(image, type) {
+  return new Promise((resolve, reject) => {
+    // Try public OCR Space API first
+    const formData = new FormData();
+    formData.append("base64Image", image);
+    formData.append("language", "eng");
+    formData.append("apikey", "helloworld");
+    
+    console.log("OCR.Space: Submitting image...");
+    fetch("https://api.ocr.space/parse/image", {
+      method: "POST",
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("HTTP error " + response.status);
+      return response.json();
+    })
+    .then(result => {
+      if (result && result.ParsedResults && result.ParsedResults.length > 0) {
+        const text = result.ParsedResults[0].ParsedText;
+        if (text && text.trim().length > 0) {
+          console.log("OCR.Space successfully returned text.");
+          resolve(text);
+          return;
+        }
+      }
+      throw new Error("No text parsed by OCR.space");
+    })
+    .catch(err => {
+      console.warn("OCR.Space failed or blocked. Trying local Tesseract.js...", err);
+      
+      // Fallback to local Tesseract.js
+      if (typeof Tesseract !== "undefined") {
+        const previewText = document.getElementById("win-sync-preview-text");
+        Tesseract.recognize(
+          image,
+          'eng',
+          { logger: m => {
+              console.log("Tesseract OCR:", m);
+              if (m.status === "recognizing" && previewText) {
+                const pct = Math.round(m.progress * 100);
+                previewText.innerHTML = `<span style="color: var(--color-primary); font-size: 0.68rem;">⏳ OCR Scanning: ${pct}%</span>`;
+              }
+            }
+          }
+        ).then(({ data: { text } }) => {
+          resolve(text);
+        }).catch(tessErr => {
+          reject(tessErr);
+        });
+      } else {
+        reject("Tesseract not available");
+      }
+    });
+  });
 }
 
 function applySyncValuesToForm(type, text, image) {
