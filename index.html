@@ -1027,15 +1027,18 @@
       
       <div class="camera-body">
         <div class="viewfinder-container">
+          <!-- Live Video Stream from Device Camera -->
+          <video id="ocr-webcam-preview" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; background: #000; display: block;"></video>
+          
           <!-- Scan laser line -->
-          <div class="scan-laser-line"></div>
+          <div class="scan-laser-line" style="z-index: 3;"></div>
           
           <!-- Sample Document inside Viewfinder -->
           <div class="mock-doc-feed" id="mock-doc-feed-container">
             <!-- Dynamic document content goes here -->
           </div>
           
-          <div class="camera-lens-grid"></div>
+          <div class="camera-lens-grid" style="z-index: 3;"></div>
         </div>
 
         <div class="scan-tips mt-2 text-center text-muted font-sm">
@@ -1144,6 +1147,49 @@
         <div class="modal-footer mt-4">
           <button type="submit" class="win-btn win-btn-accent w-100" id="btn-submit-new-user">
             👤 Register User Account
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: INVOICE CANCELLATION REASON            -->
+  <!-- ============================================== -->
+  <div id="cancellation-reason-modal" class="modal-overlay">
+    <div class="modal-content glass-panel border-glow" style="width: 400px; max-width: 90%;">
+      <div class="modal-header">
+        <h3>Cancel Transaction</h3>
+        <button class="close-btn" id="btn-close-cancel-modal">✕</button>
+      </div>
+      
+      <form id="cancellation-reason-form" onsubmit="event.preventDefault();">
+        <input type="hidden" id="cancel-tx-id-input">
+        
+        <p style="font-size: 0.82rem; color: var(--glass-text-muted); margin-bottom: 15px;">
+          You are cancelling transaction <strong id="lbl-cancel-tx-id" class="text-danger font-mono">-</strong>. Please select a category and provide a reason for auditing.
+        </p>
+
+        <div class="win-input-group">
+          <label for="cancel-category">Cancellation Category *</label>
+          <select id="cancel-category" class="win-input" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 6px; padding: 10px; color: var(--glass-text);" required>
+            <option value="" style="background-color: #0b0f19;">-- Select Category --</option>
+            <option value="Incorrect Weight" style="background-color: #0b0f19;">Incorrect Weight Entry</option>
+            <option value="Wrong Vehicle" style="background-color: #0b0f19;">Wrong Vehicle Mapping</option>
+            <option value="Double Entry" style="background-color: #0b0f19;">Double Entry / Duplicate</option>
+            <option value="Operator Error" style="background-color: #0b0f19;">Operator Typing Error</option>
+            <option value="Other" style="background-color: #0b0f19;">Other Reason</option>
+          </select>
+        </div>
+
+        <div class="win-input-group mt-3">
+          <label for="cancel-reason-notes">Detailed Comments / Reason *</label>
+          <textarea id="cancel-reason-notes" class="win-input" rows="3" placeholder="e.g. Driver's tare weight was entered as gross by mistake." style="resize: none;" required></textarea>
+        </div>
+
+        <div class="modal-footer mt-4">
+          <button type="submit" class="win-btn win-btn-accent w-100 win-action-btn" id="btn-submit-cancellation">
+            ❌ Confirm Cancellation
           </button>
         </div>
       </form>

@@ -2263,10 +2263,14 @@ input, select, button {
 }
 
 .mock-doc-feed {
+  position: absolute;
+  z-index: 2;
   width: 80%;
   height: 70%;
-  background: #1e293b;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(30, 41, 59, 0.82) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 2px dashed rgba(45, 127, 249, 0.6) !important;
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -2960,4 +2964,27 @@ select.neu-input option {
     bottom: 120px !important;
     right: 30px !important;
   }
+}
+
+/* Cancelled Transaction UI Styles */
+.cancelled-row {
+  opacity: 0.55 !important;
+  text-decoration: line-through rgba(239, 64, 64, 0.4) !important;
+  transition: all 0.3s ease;
+}
+
+.cancelled-row td:not(:last-child) {
+  opacity: 0.7;
+}
+
+.cancelled-row td a, 
+.cancelled-row td button:not(.reprint-btn) {
+  pointer-events: none !important;
+  opacity: 0.3 !important;
+}
+
+.win-badge.alert-cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }

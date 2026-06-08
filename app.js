@@ -120,6 +120,7 @@ let activeDBName = "MainDB"; // Tracks whether connected to MainDB or TempDB
 let db = null; // References current active DB state object
 let loggedInUser = null; // Tracks current session user
 let activeDevice = "android-view"; // Current main viewing tab
+let webcamStream = null; // Live webcam stream reference
 
 // Scale Simulation
 let currentScaleWeight = 0;
@@ -140,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initWebUi();
   initOcrCamera();
   initUserAdmin();
+  initCancellationUi();
   
   // Start simulated time
   setInterval(updateAndroidClock, 1000);
@@ -235,6 +237,12 @@ function loadActiveDB() {
     } else {
       db = activeDBName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
     }
+    // Ensure all transactions have a status field for backward compatibility
+    if (db && db.transactions) {
+      db.transactions.forEach(t => {
+        if (!t.status) t.status = "Completed";
+      });
+    }
   } catch (err) {
     console.error("Error loading active DB from localStorage", err);
     db = activeDBName === "MainDB" ? DEFAULT_MAIN_DB : DEFAULT_TEMP_DB;
@@ -275,6 +283,94 @@ function switchDatabaseEnvironment(targetDBName, preserveSession = false) {
   }
   
   refreshConnectedUI();
+}
+
+// ========================================================
+// 2.5 INVOICE CANCELLATION ENGINE
+// ========================================================
+
+function initCancellationUi() {
+  const modal = document.getElementById("cancellation-reason-modal");
+  const closeBtn = document.getElementById("btn-close-cancel-modal");
+  const form = document.getElementById("cancellation-reason-form");
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      modal.classList.remove("active");
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      submitTransactionCancellation();
+    });
+  }
+  
+  // Expose cancellation prompt to global window context
+  window.cancelTransactionPrompt = cancelTransactionPrompt;
+}
+
+function cancelTransactionPrompt(txId) {
+  if (!loggedInUser) {
+    showToast("Please log in to cancel transactions.", "danger");
+    return;
+  }
+  
+  const userDetails = getUserDetails(loggedInUser);
+  const secLevel = userDetails ? userDetails.securityLevel : "";
+  
+  // Security access gate check: only Level 3 or Admin role can cancel
+  const isAuthorized = loggedInUser === "admin" || secLevel.includes("Level 3");
+  if (!isAuthorized) {
+    showToast("Access Denied: Only Administrators or Level 3 operators can cancel transactions.", "danger");
+    return;
+  }
+
+  const transaction = db.transactions.find(t => t.id === txId);
+  if (!transaction) return;
+  
+  if (transaction.status === "Cancelled") {
+    showToast("Transaction is already cancelled.", "warning");
+    return;
+  }
+
+  // Populate form
+  document.getElementById("cancel-tx-id-input").value = txId;
+  document.getElementById("lbl-cancel-tx-id").textContent = txId;
+  document.getElementById("cancel-category").value = "";
+  document.getElementById("cancel-reason-notes").value = "";
+
+  // Open Modal
+  document.getElementById("cancellation-reason-modal").classList.add("active");
+}
+
+function submitTransactionCancellation() {
+  const txId = document.getElementById("cancel-tx-id-input").value;
+  const category = document.getElementById("cancel-category").value;
+  const comments = document.getElementById("cancel-reason-notes").value.trim();
+
+  if (!category || !comments) {
+    showToast("Please fill all required fields", "danger");
+    return;
+  }
+
+  const transaction = db.transactions.find(t => t.id === txId);
+  if (!transaction) return;
+
+  // Perform cancellation
+  transaction.status = "Cancelled";
+  transaction.cancellationReason = `${category} - ${comments}`;
+
+  logAuditEvent(`Cancelled Transaction ${txId}. Reason: ${category}. Notes: ${comments}`);
+  saveActiveDB();
+  
+  // Close Modal
+  document.getElementById("cancellation-reason-modal").classList.remove("active");
+  
+  // Update UI displays
+  refreshConnectedUI();
+  showToast(`Transaction ${txId} successfully cancelled!`, "success");
 }
 
 function refreshConnectedUI() {
@@ -853,6 +949,9 @@ function renderMobileReportsTable(type) {
     }
     db.transactions.forEach(tx => {
       const row = document.createElement("tr");
+      if (tx.status === "Cancelled") {
+        row.className = "cancelled-row";
+      }
       row.innerHTML = `
         <td class="font-mono"><b>${tx.vehNo}</b></td>
         <td>${tx.materialType}</td>
@@ -875,9 +974,13 @@ function renderMobileReportsTable(type) {
     }
     db.transactions.forEach(tx => {
       const row = document.createElement("tr");
+      if (tx.status === "Cancelled") {
+        row.className = "cancelled-row";
+      }
+      const payDisplay = tx.status === "Cancelled" ? "<span class='text-danger'>Cancelled</span>" : tx.paymentMethod;
       row.innerHTML = `
         <td class="font-mono">${tx.id.substring(9)}</td>
-        <td>${tx.paymentMethod}</td>
+        <td>${payDisplay}</td>
         <td class="font-mono">₹${tx.amount.toFixed(2)}</td>
       `;
       tbody.appendChild(row);
@@ -1228,6 +1331,28 @@ function executeWindowsSearch() {
 
   filtered.forEach(tx => {
     const row = document.createElement("tr");
+    if (tx.status === "Cancelled") {
+      row.className = "cancelled-row";
+    }
+    
+    let badgeHtml = `<span class="win-badge green-pulse">${tx.paymentMethod}</span>`;
+    if (tx.status === "Cancelled") {
+      badgeHtml = `<span class="win-badge alert-cancelled" title="${tx.cancellationReason || 'Cancelled'}">Cancelled</span>`;
+    }
+
+    let actionsHtml = "";
+    if (tx.status !== "Cancelled") {
+      actionsHtml = `
+        <button class="win-btn win-btn-sm" onclick="editTransactionMaterial('${tx.id}')">✏️ Edit</button>
+        <button class="win-btn win-btn-sm reprint-btn" onclick="reprintReceipt('${tx.id}')">🖨️ Print</button>
+        <button class="win-btn win-btn-sm win-action-btn" onclick="cancelTransactionPrompt('${tx.id}')">❌ Cancel</button>
+      `;
+    } else {
+      actionsHtml = `
+        <button class="win-btn win-btn-sm reprint-btn" onclick="reprintReceipt('${tx.id}')">🖨️ Print</button>
+      `;
+    }
+
     row.innerHTML = `
       <td>${tx.id.split("-")[2]}</td>
       <td class="font-mono">${tx.id}</td>
@@ -1239,11 +1364,10 @@ function executeWindowsSearch() {
       <td class="font-mono">${tx.netWeight} kg</td>
       <td class="font-mono">₹${tx.rate.toFixed(2)}</td>
       <td class="font-mono">₹${tx.amount.toFixed(2)}</td>
-      <td><span class="win-badge green-pulse">${tx.paymentMethod}</span></td>
+      <td>${badgeHtml}</td>
       <td class="text-muted">${tx.timestamp}</td>
       <td>
-        <button class="win-btn win-btn-sm" onclick="editTransactionMaterial('${tx.id}')">✏️ Edit</button>
-        <button class="win-btn win-btn-sm" onclick="reprintReceipt('${tx.id}')">🖨️ Print</button>
+        ${actionsHtml}
       </td>
     `;
     resultsBody.appendChild(row);
@@ -1390,14 +1514,23 @@ function syncWebReports() {
   // Main collections calculate
   let mainTotal = 0;
   mainRaw.transactions.forEach(tx => {
-    mainTotal += tx.amount;
+    if (tx.status !== "Cancelled") {
+      mainTotal += tx.amount;
+    }
     const row = document.createElement("tr");
+    if (tx.status === "Cancelled") {
+      row.className = "cancelled-row";
+    }
+    let badgeHtml = `<span class="win-badge green-pulse">${tx.paymentMethod}</span>`;
+    if (tx.status === "Cancelled") {
+      badgeHtml = `<span class="win-badge alert-cancelled">Cancelled</span>`;
+    }
     row.innerHTML = `
       <td class="font-mono">${tx.id}</td>
       <td class="font-mono"><b>${tx.vehNo}</b></td>
       <td class="font-mono">${tx.netWeight} kg</td>
       <td class="font-mono">₹${tx.amount.toFixed(2)}</td>
-      <td><span class="win-badge green-pulse">${tx.paymentMethod}</span></td>
+      <td>${badgeHtml}</td>
     `;
     mainTable.appendChild(row);
   });
@@ -1405,14 +1538,23 @@ function syncWebReports() {
   // Temp collections calculate
   let tempTotal = 0;
   tempRaw.transactions.forEach(tx => {
-    tempTotal += tx.amount;
+    if (tx.status !== "Cancelled") {
+      tempTotal += tx.amount;
+    }
     const row = document.createElement("tr");
+    if (tx.status === "Cancelled") {
+      row.className = "cancelled-row";
+    }
+    let badgeHtml = `<span class="win-badge green-pulse">${tx.paymentMethod}</span>`;
+    if (tx.status === "Cancelled") {
+      badgeHtml = `<span class="win-badge alert-cancelled">Cancelled</span>`;
+    }
     row.innerHTML = `
       <td class="font-mono">${tx.id}</td>
       <td class="font-mono"><b>${tx.vehNo}</b></td>
       <td class="font-mono">${tx.netWeight} kg</td>
       <td class="font-mono">₹${tx.amount.toFixed(2)}</td>
-      <td><span class="win-badge green-pulse">${tx.paymentMethod}</span></td>
+      <td>${badgeHtml}</td>
     `;
     tempTable.appendChild(row);
   });
@@ -1421,7 +1563,8 @@ function syncWebReports() {
   document.getElementById("web-stat-main-collections").textContent = `₹ ${mainTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
   document.getElementById("web-stat-temp-collections").textContent = `₹ ${tempTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
   
-  const totalCount = mainRaw.transactions.length + tempRaw.transactions.length;
+  const totalCount = mainRaw.transactions.filter(t => t.status !== "Cancelled").length + 
+                     tempRaw.transactions.filter(t => t.status !== "Cancelled").length;
   document.getElementById("web-stat-total-weighments").textContent = totalCount;
 
   // Redraw SVG Bar chart based on current db
@@ -1433,9 +1576,11 @@ function drawWebAnalyticalCharts(transactions) {
   if (!barsContainer) return;
   barsContainer.innerHTML = "";
 
+  const activeTx = transactions.filter(tx => tx.status !== "Cancelled");
+
   // Aggregate values by material type
   const summary = {};
-  transactions.forEach(tx => {
+  activeTx.forEach(tx => {
     if (!summary[tx.materialType]) {
       summary[tx.materialType] = 0;
     }
@@ -1444,7 +1589,7 @@ function drawWebAnalyticalCharts(transactions) {
 
   const materials = Object.keys(summary);
   if (materials.length === 0) {
-    barsContainer.innerHTML = `<text x="400" y="100" fill="#888" text-anchor="middle">No transaction data available to draw chart.</text>`;
+    barsContainer.innerHTML = `<text x="400" y="100" fill="#888" text-anchor="middle">No active transaction data available to draw chart.</text>`;
     return;
   }
 
@@ -1579,6 +1724,42 @@ const OCR_DOCS = {
 let activeOcrTarget = null; // 'plate', 'rc', 'dl'
 let activeOcrFieldId = null; // HTML field ID to fill
 
+function startWebcamStream() {
+  const video = document.getElementById("ocr-webcam-preview");
+  if (!video) return;
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => {
+        webcamStream = stream;
+        video.srcObject = stream;
+        video.style.display = "block";
+      })
+      .catch(error => {
+        console.warn("Webcam access failed or denied. Falling back to mock interface.", error);
+        showToast("Webcam blocked or unavailable. Using simulated viewer.", "warning");
+        video.srcObject = null;
+      });
+  } else {
+    console.warn("navigator.mediaDevices.getUserMedia not supported on this browser.");
+  }
+}
+
+function stopWebcamStream() {
+  if (webcamStream) {
+    try {
+      webcamStream.getTracks().forEach(track => track.stop());
+    } catch (e) {
+      console.error("Error stopping webcam tracks:", e);
+    }
+    webcamStream = null;
+  }
+  const video = document.getElementById("ocr-webcam-preview");
+  if (video) {
+    video.srcObject = null;
+  }
+}
+
 function initOcrCamera() {
   const modal = document.getElementById("ocr-camera-modal");
   const closeBtn = document.getElementById("btn-close-ocr");
@@ -1586,6 +1767,7 @@ function initOcrCamera() {
 
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("active");
+    stopWebcamStream();
   });
 
   captureBtn.addEventListener("click", () => {
@@ -1630,6 +1812,7 @@ function initOcrCamera() {
         captureBtn.classList.remove("hidden");
         progressContainer.classList.add("hidden");
         progressFill.style.width = "0%";
+        stopWebcamStream();
       }
     }, 100);
   });
@@ -1661,6 +1844,7 @@ function triggerCameraSimulator(type, targetFieldId) {
 
   // Open modal
   document.getElementById("ocr-camera-modal").classList.add("active");
+  startWebcamStream();
   showToast("Camera Viewfinder Active. Click Capture.", "info");
 }
 
@@ -1672,8 +1856,18 @@ function showThermalReceipt(tx) {
   const modal = document.getElementById("thermal-print-modal");
   const paper = document.getElementById("receipt-paper-content");
 
+  let cancelledHeader = "";
+  if (tx.status === "Cancelled") {
+    cancelledHeader = `
+     ********************************
+      *** CANCELLED TRANSACTION ***  
+     Reason: ${tx.cancellationReason || "Not Specified"}
+     ********************************
+`;
+  }
+
   // Format thermal text alignment
-  const printText = `
+  const printText = `${cancelledHeader}
      ================================
       WEIGHBRIDGE MANAGEMENT SYSTEM  
        OFFICIAL TRANSACTION SLIP     
@@ -1775,8 +1969,14 @@ function renderWindowsReportsTable(type) {
     }
     db.transactions.forEach(tx => {
       const row = document.createElement("tr");
+      if (tx.status === "Cancelled") {
+        row.classList.add("cancelled-row");
+      }
       row.innerHTML = `
-        <td class="font-mono">${tx.id}</td>
+        <td class="font-mono">
+          ${tx.id}
+          ${tx.status === "Cancelled" ? ` <span class="win-badge alert-cancelled" title="${tx.cancellationReason || 'Cancelled'}">Cancelled</span>` : ''}
+        </td>
         <td class="font-mono"><b>${tx.vehNo}</b></td>
         <td>${tx.driverName}</td>
         <td>${tx.materialType}</td>
@@ -1806,11 +2006,19 @@ function renderWindowsReportsTable(type) {
     }
     db.transactions.forEach(tx => {
       const row = document.createElement("tr");
+      if (tx.status === "Cancelled") {
+        row.classList.add("cancelled-row");
+      }
+      const badgeClass = tx.status === "Cancelled" ? "alert-cancelled" : "green-pulse";
+      const badgeLabel = tx.status === "Cancelled" ? "Cancelled" : tx.paymentMethod;
+      const titleAttr = tx.status === "Cancelled" ? ` title="${tx.cancellationReason || 'Cancelled'}"` : '';
       row.innerHTML = `
-        <td class="font-mono">${tx.id}</td>
+        <td class="font-mono">
+          ${tx.id}
+        </td>
         <td class="font-mono"><b>${tx.vehNo}</b></td>
         <td class="font-mono"><b>₹${tx.amount.toFixed(2)}</b></td>
-        <td><span class="win-badge green-pulse">${tx.paymentMethod}</span></td>
+        <td><span class="win-badge ${badgeClass}"${titleAttr}>${badgeLabel}</span></td>
         <td class="text-muted">${tx.timestamp}</td>
         <td class="text-info">${activeDBName === "MainDB" ? "Main" : "Temporary"}</td>
       `;
@@ -1974,9 +2182,10 @@ function populateDraftDropdowns() {
 }
 
 function updateStatsCounters() {
-  const count = db.transactions.length;
+  const activeTx = db.transactions.filter(t => t.status !== "Cancelled");
+  const count = activeTx.length;
   let collectionsSum = 0;
-  db.transactions.forEach(t => collectionsSum += t.amount);
+  activeTx.forEach(t => collectionsSum += t.amount);
 
   const draftsCount = db.drafts.length;
 
